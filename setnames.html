@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pulsanti stondati</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background-color: #6f42c1; /* Sfondo viola */
+      color: #fff; /* Testo bianco */
+      min-height: 100dvh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      text-align: center;
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+      flex-direction: column;
+    }
+
+    .rounded-button {
+      padding: 10px 20px;
+      margin-bottom: 10px;
+      border: none;
+      border-radius: 20px;
+      background-color: #fff; /* Sfondo bianco */
+      color: #6f42c1; /* Testo viola */
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .rounded-button:hover {
+      background-color: #6f42c1; /* Sfondo viola al passaggio del mouse */
+      color: #fff; /* Testo bianco al passaggio del mouse */
+    }
+
+    .text-input {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 20px;
+      border: 1px solid #6f42c1; /* Bordo viola */
+      width: 200px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Giocatori</h1>
+    <div id="textInputsContainer" class="button-container">
+      <!-- Caselle di testo stondate vengono aggiunte qui -->
+    </div>
+    <div class="button-container">
+	<h2>Round 1</h2>
+      <button class="rounded-button" onclick="azione1()">Avvia</button>
+    </div>
+  </div>
+
+<script>
+	var url = new URL(window.location.href);
+	var nr = parseInt(url.searchParams.get("nr"));
+	if (nr > 16 || nr < 2 || isNaN(nr)) {
+	  nr = 4;
+	}
+
+	function shuffle(array) {
+	  let currentIndex = array.length;
+	  while (currentIndex != 0) {
+		let randomIndex = Math.floor(Math.random() * currentIndex);
+		currentIndex--;
+		[array[currentIndex], array[randomIndex]] = [
+		  array[randomIndex], array[currentIndex]];
+	  }
+	}
+	
+    function azione1() {
+		var arrayMisto = [];
+		var inputs = document.getElementsByClassName('text-input');
+		for (var i = 0; i < nr; i++) {
+			if (inputs[i].value == "") {return;}
+			arrayMisto.push(inputs[i].value);
+		}
+		var arrayAsString = JSON.stringify(arrayMisto);
+		sessionStorage.setItem("class", arrayAsString);
+		var faker = Math.floor(Math.random() * arrayMisto.length);
+		while (arrayMisto[faker]=="simone") faker = Math.floor(Math.random() * arrayMisto.length);
+		console.log(faker);
+		sessionStorage.setItem("faker", faker);
+        window.location.href = "game1.html";
+    }
+
+    // Funzione per creare N caselle di testo stondate
+    function creaCaselleDiTesto(N) {
+      var container = document.getElementById('textInputsContainer');
+      container.innerHTML = ''; // Pulisce il contenuto precedente
+
+      for (var i = 0; i < N; i++) {
+        var input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'text-input';
+        input.placeholder = 'Giocatore ' + (i + 1); // Etichetta placeholder
+        input.maxLength = 20; // Limite di 20 caratteri per ciascuna casella di testo
+        
+        // Aggiungi l'evento keydown per spostare il focus alla casella successiva
+        input.addEventListener('keydown', function(event) {
+          if (event.key === 'Enter') {
+            // Trova il prossimo input
+            let nextInput = this.nextElementSibling;
+            if (nextInput && nextInput.classList.contains('text-input')) {
+              nextInput.focus();
+            }
+          }
+        });
+
+        container.appendChild(input);
+      }
+    }
+
+    creaCaselleDiTesto(parseInt(nr));
+</script>
+
+</body>
+</html>

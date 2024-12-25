@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pulsanti stondati</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background-color: #6f42c1; /* Sfondo viola */
+      color: #fff; /* Testo bianco */
+      min-height: 100dvh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      text-align: center;
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+      flex-direction: column;
+    }
+
+    .rounded-button {
+      padding: 10px 20px;
+      margin-bottom: 10px;
+      border: none;
+      border-radius: 20px;
+      background-color: #fff; /* Sfondo bianco */
+      color: #6f42c1; /* Testo viola */
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .rounded-button:hover {
+      background-color: #6f42c1; /* Sfondo viola al passaggio del mouse */
+      color: #fff; /* Testo bianco al passaggio del mouse */
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Votate chi eliminare</h1>
+    <div id="button-container"></div>
+  </div>
+
+  <script>
+    // Recupera l'array dal sessionStorage
+    const retrievedArrayAsString = sessionStorage.getItem("class");
+    const nome = JSON.parse(retrievedArrayAsString);
+	var faker = parseInt(sessionStorage.getItem("faker"), 10);
+
+    // Seleziona il contenitore dei pulsanti
+    const buttonContainer = document.getElementById("button-container");
+
+    // Genera dinamicamente i pulsanti
+    nome.forEach((person, index) => {
+      const buttonWrapper = document.createElement("div"); // Creazione di un contenitore per ciascun pulsante
+      buttonWrapper.classList.add("button-container");
+
+      const button = document.createElement("button");
+      button.classList.add("rounded-button");
+      button.textContent = person;
+      button.setAttribute("onclick", `azione2(${index})`); // Aggiungi un'azione specifica per ogni pulsante
+
+      buttonWrapper.appendChild(button);
+      buttonContainer.appendChild(buttonWrapper);
+    });
+
+    function azione2(index) {
+		if (index == faker) window.location.href = "fine1.html";
+		else{
+		if (index<faker) faker-=1;
+		alert(nome[index]+" era innocente.");
+		nome.splice(index, 1);
+		if (nome.length == 2) window.location.href = "fine2.html";
+		else{
+		var arrayAsString = JSON.stringify(nome);
+		sessionStorage.setItem("class", arrayAsString);
+		sessionStorage.setItem("faker", faker);
+		window.location.href = "game1.html";}}
+    }
+  </script>
+</body>
+</html>

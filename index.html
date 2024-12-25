@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pulsanti stondati</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background-color: #6f42c1; /* Sfondo viola */
+      color: #fff; /* Testo bianco */
+      min-height: 100dvh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      text-align: center;
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+	  flex-direction: column;
+    }
+
+    .rounded-button {
+      padding: 10px 20px;
+      margin-bottom: 10px;
+      border: none;
+      border-radius: 20px;
+      background-color: #fff; /* Sfondo bianco */
+      color: #6f42c1; /* Testo viola */
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .rounded-button:hover {
+      background-color: #6f42c1; /* Sfondo viola al passaggio del mouse */
+      color: #fff; /* Testo bianco al passaggio del mouse */
+    }
+	
+	.slider-container {
+		text-align: center;
+		margin-top: 10px;
+	}
+	.slider {
+	  -webkit-appearance: none;
+	  width: 100%;
+	  height: 15px;
+	  border-radius: 5px;  
+	  background: #d3d3d3;
+	  outline: none;
+	  opacity: 0.7;
+	  -webkit-transition: .2s;
+	  transition: opacity .2s;
+	}
+
+	.slider::-webkit-slider-thumb {
+	  -webkit-appearance: none;
+	  appearance: none;
+	  width: 25px;
+	  height: 25px;
+	  border-radius: 50%; 
+	  background: #04AA6D;
+	  cursor: pointer;
+	}
+
+	.slider::-moz-range-thumb {
+	  width: 25px;
+	  height: 25px;
+	  border-radius: 50%;
+	  background: #04AA6D;
+	  cursor: pointer;
+	}
+  </style>
+</head>
+<body>
+  <div class="container">
+  <h1>Numero di giocatori</h1>
+	<div class="slidecontainer">
+	  <input type="range" min="2" max="16" value="4" class="slider" id="numeroGiocatori">
+	  <p>Giocatori: <span id="nr">4</span></p>
+	</div>
+    <div class="button-container">
+      <button class="rounded-button" onclick="azione1()">Continua</button>
+    </div>
+  </div>
+
+  <script>
+
+	var slider = document.getElementById("numeroGiocatori");
+	var output = document.getElementById("nr");
+	output.innerHTML = slider.value;
+
+    function azione1() {
+		var url = 'setnames.html?nr=' + slider.value;
+        window.location.href = url;
+    }
+	slider.oninput = function() {
+	  output.innerHTML = this.value;
+	}
+
+  </script>
+</body>
+</html>
