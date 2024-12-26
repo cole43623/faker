@@ -68,7 +68,7 @@
 <script>
 	var url = new URL(window.location.href);
 	var nr = parseInt(url.searchParams.get("nr"));
-	if (nr > 16 || nr < 2 || isNaN(nr)) {
+	if (nr > 16 || nr < 3 || isNaN(nr)) {
 	  nr = 4;
 	}
 
@@ -92,7 +92,7 @@
 		var arrayAsString = JSON.stringify(arrayMisto);
 		sessionStorage.setItem("class", arrayAsString);
 		var faker = Math.floor(Math.random() * arrayMisto.length);
-		while (arrayMisto[faker]=="simone") faker = Math.floor(Math.random() * arrayMisto.length);
+		while (arrayMisto[faker]=="simones") faker = Math.floor(Math.random() * arrayMisto.length);
 		console.log(faker);
 		sessionStorage.setItem("faker", faker);
         window.location.href = "game1.html";
