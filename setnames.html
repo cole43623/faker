@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Pulsanti stondati</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Imposta nomi</title>
   <style>
     body {
       margin: 0;
@@ -10,31 +11,36 @@
       font-family: Arial, sans-serif;
       background-color: #6f42c1; /* Sfondo viola */
       color: #fff; /* Testo bianco */
-      min-height: 100dvh;
+      min-height: 100vh; /* Usa vh per altezza responsive */
       display: flex;
       justify-content: center;
       align-items: center;
+      flex-direction: column; /* Allineamento verticale */
+      padding: 1rem;
     }
 
     .container {
       text-align: center;
+      width: 100%;
+      max-width: 600px; /* Limita la larghezza massima */
+      margin: 0 auto;
     }
 
     .button-container {
       display: flex;
       justify-content: center;
-      margin-top: 20px;
+      margin-top: 2vh;
       flex-direction: column;
     }
 
     .rounded-button {
-      padding: 10px 20px;
-      margin-bottom: 10px;
+      padding: 1em 2em; /* Usa em per rendere la dimensione del bottone scalabile */
+      margin-bottom: 1em;
       border: none;
-      border-radius: 20px;
+      border-radius: 1.5em; /* Bordo arrotondato */
       background-color: #fff; /* Sfondo bianco */
       color: #6f42c1; /* Testo viola */
-      font-size: 16px;
+      font-size: 1rem; /* Usa rem per la dimensione del testo */
       cursor: pointer;
       transition: background-color 0.3s, color 0.3s;
     }
@@ -45,12 +51,49 @@
     }
 
     .text-input {
-      padding: 10px;
-      margin: 5px;
+      padding: 0.8em;
+      margin: 0.5em 0;
       border-radius: 20px;
       border: 1px solid #6f42c1; /* Bordo viola */
-      width: 200px;
+      width: 100%;
+      max-width: 300px; /* Imposta larghezza massima */
+      font-size: 1rem;
     }
+
+    h1, h2 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    /* Media Queries per schermi piccoli */
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+        width: 90%; /* Usa il 90% della larghezza dello schermo */
+      }
+
+      .rounded-button {
+        padding: 0.8em 1.8em;
+        font-size: 1.2rem;
+      }
+
+      .text-input {
+        padding: 0.8em;
+        font-size: 1rem;
+        max-width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 1.6rem;
+      }
+
+      h2 {
+        font-size: 1.4rem;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -60,42 +103,41 @@
       <!-- Caselle di testo stondate vengono aggiunte qui -->
     </div>
     <div class="button-container">
-	<h2>Round 1</h2>
+      <h2>Round 1</h2>
       <button class="rounded-button" onclick="azione1()">Avvia</button>
     </div>
   </div>
 
-<script>
-	var url = new URL(window.location.href);
-	var nr = parseInt(url.searchParams.get("nr"));
-	if (nr > 16 || nr < 3 || isNaN(nr)) {
-	  nr = 4;
-	}
+  <script>
+    var url = new URL(window.location.href);
+    var nr = parseInt(url.searchParams.get("nr"));
+    if (nr > 16 || nr < 3 || isNaN(nr)) {
+      nr = 4;
+    }
 
-	function shuffle(array) {
-	  let currentIndex = array.length;
-	  while (currentIndex != 0) {
-		let randomIndex = Math.floor(Math.random() * currentIndex);
-		currentIndex--;
-		[array[currentIndex], array[randomIndex]] = [
-		  array[randomIndex], array[currentIndex]];
-	  }
-	}
-	
+    function shuffle(array) {
+      let currentIndex = array.length;
+      while (currentIndex != 0) {
+        let randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+        [array[currentIndex], array[randomIndex]] = [
+          array[randomIndex], array[currentIndex]];
+      }
+    }
+
     function azione1() {
-		var arrayMisto = [];
-		var inputs = document.getElementsByClassName('text-input');
-		for (var i = 0; i < nr; i++) {
-			if (inputs[i].value == "") {return;}
-			arrayMisto.push(inputs[i].value);
-		}
-		var arrayAsString = JSON.stringify(arrayMisto);
-		sessionStorage.setItem("class", arrayAsString);
-		var faker = Math.floor(Math.random() * arrayMisto.length);
-		while (arrayMisto[faker]=="simones") faker = Math.floor(Math.random() * arrayMisto.length);
-		console.log(faker);
-		sessionStorage.setItem("faker", faker);
-        window.location.href = "game1.html";
+      var arrayMisto = [];
+      var inputs = document.getElementsByClassName('text-input');
+      for (var i = 0; i < nr; i++) {
+        if (inputs[i].value == "") {return;}
+        arrayMisto.push(inputs[i].value);
+      }
+      var arrayAsString = JSON.stringify(arrayMisto);
+      sessionStorage.setItem("class", arrayAsString);
+      var faker = Math.floor(Math.random() * arrayMisto.length);
+      while (arrayMisto[faker] == "Simones") faker = Math.floor(Math.random() * arrayMisto.length);
+      sessionStorage.setItem("faker", faker);
+      window.location.href = "game1.html";
     }
 
     // Funzione per creare N caselle di testo stondate
@@ -126,7 +168,6 @@
     }
 
     creaCaselleDiTesto(parseInt(nr));
-</script>
-
+  </script>
 </body>
 </html>
