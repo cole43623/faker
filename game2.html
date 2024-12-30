@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Pulsanti stondati</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Votazione</title>
   <style>
     body {
       margin: 0;
@@ -10,38 +11,70 @@
       font-family: Arial, sans-serif;
       background-color: #6f42c1; /* Sfondo viola */
       color: #fff; /* Testo bianco */
-      min-height: 100dvh;
+      min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
+      padding: 1rem;
     }
 
     .container {
       text-align: center;
+      width: 100%;
+      max-width: 600px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 2rem;
     }
 
     .button-container {
       display: flex;
       justify-content: center;
-      margin-top: 20px;
-      flex-direction: column;
+      gap: 10px;
+	  margin-top: 10px;
     }
 
     .rounded-button {
-      padding: 10px 20px;
-      margin-bottom: 10px;
+      padding: 1em 2em;
       border: none;
       border-radius: 20px;
       background-color: #fff; /* Sfondo bianco */
       color: #6f42c1; /* Testo viola */
-      font-size: 16px;
+      font-size: 1.2rem;
       cursor: pointer;
       transition: background-color 0.3s, color 0.3s;
+      width: 100%;
+      max-width: 250px; /* Larghezza massima per i pulsanti */
     }
 
     .rounded-button:hover {
       background-color: #6f42c1; /* Sfondo viola al passaggio del mouse */
       color: #fff; /* Testo bianco al passaggio del mouse */
+    }
+
+    /* Media Queries per schermi più piccoli */
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 1.6rem;
+      }
+
+      .rounded-button {
+        font-size: 1rem;
+        padding: 0.8em 1.5em;
+      }
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 1.4rem;
+      }
+
+      .rounded-button {
+        font-size: 1rem;
+        padding: 0.8em 1.3em;
+      }
     }
   </style>
 </head>
@@ -55,7 +88,7 @@
     // Recupera l'array dal sessionStorage
     const retrievedArrayAsString = sessionStorage.getItem("class");
     const nome = JSON.parse(retrievedArrayAsString);
-	var faker = parseInt(sessionStorage.getItem("faker"), 10);
+    var faker = parseInt(sessionStorage.getItem("faker"), 10);
 
     // Seleziona il contenitore dei pulsanti
     const buttonContainer = document.getElementById("button-container");
@@ -75,17 +108,21 @@
     });
 
     function azione2(index) {
-		if (index == faker) window.location.href = "fine1.html";
-		else{
-		if (index<faker) faker-=1;
-		alert(nome[index]+" era innocente.");
-		nome.splice(index, 1);
-		if (nome.length == 2) window.location.href = "fine2.html";
-		else{
-		var arrayAsString = JSON.stringify(nome);
-		sessionStorage.setItem("class", arrayAsString);
-		sessionStorage.setItem("faker", faker);
-		window.location.href = "game1.html";}}
+      if (index == faker) {
+        window.location.href = "fine1.html";
+      } else {
+        if (index < faker) faker -= 1;
+        alert(nome[index] + " era innocente.");
+        nome.splice(index, 1);
+        if (nome.length == 2) {
+          window.location.href = "fine2.html";
+        } else {
+          var arrayAsString = JSON.stringify(nome);
+          sessionStorage.setItem("class", arrayAsString);
+          sessionStorage.setItem("faker", faker);
+          window.location.href = "game1.html";
+        }
+      }
     }
   </script>
 </body>
