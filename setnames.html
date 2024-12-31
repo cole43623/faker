@@ -27,7 +27,6 @@
     }
 
     .button-container {
-      display: flex;
       justify-content: center;
       margin-top: 2vh;
       flex-direction: column;
@@ -43,7 +42,8 @@
       font-size: 1rem; /* Usa rem per la dimensione del testo */
       cursor: pointer;
       transition: background-color 0.3s, color 0.3s;
-    }
+		width: 55%;
+	}
 
     .rounded-button:hover {
       background-color: #6f42c1; /* Sfondo viola al passaggio del mouse */
@@ -60,7 +60,7 @@
       font-size: 1rem;
     }
 
-    h1, h2 {
+    h1 {
       font-size: 2rem;
       margin-bottom: 1rem;
     }
@@ -89,11 +89,6 @@
         font-size: 1.6rem;
       }
 
-      h2 {
-        font-size: 1.4rem;
-      }
-    }
-
   </style>
 </head>
 <body>
@@ -103,7 +98,6 @@
       <!-- Caselle di testo stondate vengono aggiunte qui -->
     </div>
     <div class="button-container">
-      <h2>Round 1</h2>
       <button class="rounded-button" onclick="azione1()">Avvia</button>
     </div>
   </div>

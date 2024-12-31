@@ -80,7 +80,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>Votate chi eliminare</h1>
+    <h1><span id="dom"></span><br>Votate chi eliminare</h1>
     <div id="button-container"></div>
   </div>
 
@@ -88,8 +88,11 @@
     // Recupera l'array dal sessionStorage
     const retrievedArrayAsString = sessionStorage.getItem("class");
     const nome = JSON.parse(retrievedArrayAsString);
+	const domanda = sessionStorage.getItem("domanda");
     var faker = parseInt(sessionStorage.getItem("faker"), 10);
 
+	let output = document.getElementById("dom");
+	output.innerHTML = domanda;
     // Seleziona il contenitore dei pulsanti
     const buttonContainer = document.getElementById("button-container");
 
