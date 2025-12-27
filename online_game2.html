@@ -331,7 +331,7 @@
                 } else {
                     sessionStorage.setItem('gameResult', 'faker_wins');
                 }
-                sessionStorage.setItem('eliminated', currentRoom.eliminated || '');
+                sessionStorage.setItem('faker_name', currentRoom.faker_name || '');
                 window.location.href = 'online_end.html';
                 return;
             } else if (currentRoom.status === 'playing') {
@@ -521,7 +521,7 @@
                     // Il faker e stato trovato!
                     await supabaseClient
                         .from('rooms')
-                        .update({ status: 'finished', winner: 'players', eliminated: eliminated })
+                        .update({ status: 'finished', winner: 'players', faker_name: eliminated })
                         .eq('id', roomId);
                 } else {
                     // Giocatore innocente eliminato - aggiungi alla lista degli eliminati
@@ -533,12 +533,14 @@
 
                     if (remainingPlayers <= 2) {
                         // Il faker vince!
+                        const faker = allPlayers.find(p => p.is_faker);
                         await supabaseClient
                             .from('rooms')
                             .update({
                                 status: 'finished',
                                 winner: 'faker',
-                                eliminated: eliminated,
+                                faker_name: faker ? faker.name : '', // Salviamo il nome del Faker
+                                last_eliminated: eliminated, // Salviamo l'innocente qui
                                 eliminated_players: currentEliminated
                             })
                             .eq('id', roomId);
@@ -580,7 +582,7 @@
                             } else {
                                 sessionStorage.setItem('gameResult', 'faker_wins');
                             }
-                            sessionStorage.setItem('eliminated', currentRoom.eliminated || '');
+                            sessionStorage.setItem('faker_name', currentRoom.faker_name || '');
                             window.location.href = 'online_end.html';
                         } else if (currentRoom.status === 'playing') {
                             // Mostra chi e stato eliminato e torna al gioco

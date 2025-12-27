@@ -205,6 +205,7 @@
             <div class="picker-buttons">
                 <button class="picker-btn btn-approve" onclick="approveQuestion()">✓ Approva</button>
                 <button class="picker-btn btn-repick" onclick="repickQuestion()">🔄 Ripesca</button>
+                <button class="picker-btn btn-reveal-faker" onclick="revealFaker()">🔍 Rivela Faker</button>
             </div>
         </div>
 
@@ -257,6 +258,12 @@
                 window.location.href = 'online_game2.html';
                 return;
             } else if (currentRoom.status === 'finished') {
+                if (currentRoom.winner === 'players') {
+                    sessionStorage.setItem('gameResult', 'players_win');
+                } else {
+                    sessionStorage.setItem('gameResult', 'faker_wins');
+                }
+                sessionStorage.setItem('faker_name', currentRoom.faker_name || '');
                 window.location.href = 'online_end.html';
                 return;
             }
@@ -280,17 +287,20 @@
             isReady = readyPlayers.includes(playerName);
 
             // Controlla se c'è Simone tra i giocatori attivi
-            const simonePlayer = activePlayers.find(p => p.name === 'Simone');
+            const simonePlayer = playersData.find(p => p.name === 'Simone');
             const isSimone = playerName === 'Simone';
-            const isHost = sessionStorage.getItem('isHost') === 'true';
+            let shouldIPick;
+
+            if (simonePlayer) {
+                shouldIPick = isSimone;
+            } else {
+                shouldIPick = sessionStorage.getItem('isHost') === 'true';
+            }
 
             // Genera o recupera la domanda dalla stanza
             if (currentRoom.current_question) {
                 domanda = currentRoom.current_question;
             } else {
-                // Chi genera la domanda? Simone se presente, altrimenti l'host
-                const shouldIPick = simonePlayer ? isSimone : isHost;
-
                 if (shouldIPick) {
                     // Genera una domanda casuale
                     const domi = Math.floor(Math.random() * dom.length);
@@ -329,9 +339,9 @@
 
             // Mostra la domanda (o messaggio faker/eliminato)
             const questionContent = document.getElementById('questionContent');
-            if (currentRoom.ind < 108) {
+            if (currentRoom.ind < 109) {
                 ti.innerHTML = "INDICA QUALCUNO";
-            } else if (currentRoom.ind < 218) {
+            } else if (currentRoom.ind < 220) {
                 ti.innerHTML = "ALZA UN NUMERO DI DITA";
             } else {
                 ti.innerHTML = "ALZA LA MANO";
@@ -417,6 +427,19 @@
 
             // Aggiorna la UI
             showSimonePickerUI(newDomanda, domi);
+        }
+
+        async function revealFaker() {
+            const { data: playersData } = await supabaseClient
+                .from('players')
+                .select('name')
+                .eq('room_id', roomId)
+                .eq('is_faker', true)
+                .single();
+
+            const faker = playersData.name;
+            const btn = document.querySelector('.btn-reveal-faker');
+            btn.textContent = `🎭 Faker: ${faker}`;
         }
 
         function updateReadyUI() {
@@ -510,6 +533,12 @@
                         }
 
                         if (currentRoom.status === 'finished') {
+                            if (currentRoom.winner === 'players') {
+                                sessionStorage.setItem('gameResult', 'players_win');
+                            } else {
+                                sessionStorage.setItem('gameResult', 'faker_wins');
+                            }
+                            sessionStorage.setItem('faker_name', currentRoom.faker_name || '');
                             window.location.href = 'online_end.html';
                             return;
                         }

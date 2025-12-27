@@ -40,30 +40,17 @@
         const roomId = sessionStorage.getItem('roomId');
         const isHost = sessionStorage.getItem('isHost') === 'true';
         const gameResult = sessionStorage.getItem('gameResult');
-        const eliminated = sessionStorage.getItem('eliminated');
+        const fakerName = sessionStorage.getItem('faker_name');
 
         async function initEndScreen() {
             if (gameResult === 'players_win') {
                 document.getElementById('playersWin').style.display = 'block';
-                document.getElementById('fakerName').textContent = eliminated + ' era il Faker!';
+                document.getElementById('fakerName').textContent = fakerName + ' era il Faker!';
                 document.body.classList.add('players-win');
             } else {
                 document.getElementById('fakerWins').style.display = 'block';
                 document.body.classList.add('faker-wins');
-
-                // Cerca chi era il faker
-                if (roomId) {
-                    const { data: fakerPlayer } = await supabaseClient
-                        .from('players')
-                        .select('name')
-                        .eq('room_id', roomId)
-                        .eq('is_faker', true)
-                        .single();
-
-                    if (fakerPlayer) {
-                        document.getElementById('fakerNameEnd').textContent = fakerPlayer.name;
-                    }
-                }
+                document.getElementById('fakerNameEnd').textContent = fakerName;
             }
         }
 
@@ -72,7 +59,7 @@
         async function playAgain() {
             // Pulisci i dati del gioco ma mantieni la stanza
             sessionStorage.removeItem('gameResult');
-            sessionStorage.removeItem('eliminated');
+            sessionStorage.removeItem('faker_name');
             sessionStorage.removeItem('onlineDomanda');
             sessionStorage.removeItem('onlineDomi');
 
@@ -88,7 +75,7 @@
                         ready_players: [],
                         eliminated_players: [],
                         winner: null,
-                        eliminated: null,
+                        faker_name: null,
                         last_eliminated: null
                     })
                     .eq('id', roomId);

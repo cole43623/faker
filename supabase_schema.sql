@@ -8,7 +8,7 @@ create table public.rooms (
   current_player_index integer default 0,
   votes jsonb default '{}'::jsonb,
   winner text,
-  eliminated text,
+  faker_name text,
   last_eliminated text,
   current_question text,
   ind integer,
