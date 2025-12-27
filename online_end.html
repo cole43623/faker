@@ -6,85 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fine Partita</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            background-color: #6f42c1;
-            color: #fff;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            padding: 1rem;
-        }
-
-        .container {
-            text-align: center;
-            width: 100%;
-            max-width: 600px;
-        }
-
-        h1 {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-
-        .result-icon {
-            font-size: 5rem;
-            margin: 1rem 0;
-        }
-
-        .result-message {
-            font-size: 1.5rem;
-            margin: 1rem 0;
-            opacity: 0.9;
-        }
-
-        .eliminated-name {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #f39c12;
-            margin: 1rem 0;
-        }
-
-        .button-container {
-            display: flex;
-            justify-content: center;
-            margin-top: 2rem;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .rounded-button {
-            padding: 1em 2em;
-            margin-bottom: 1em;
-            border: none;
-            border-radius: 1.5em;
-            background-color: #fff;
-            color: #6f42c1;
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: background-color 0.3s, color 0.3s;
-            width: 70%;
-            max-width: 340px;
-        }
-
-        .rounded-button:hover {
-            background-color: #5a359d;
-            color: #fff;
-        }
-
-        .players-win {
-            background-color: #04AA6D;
-        }
-
-        .faker-wins {
-            background-color: #e74c3c;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -98,12 +20,13 @@
     <div class="container" id="fakerWins" style="display: none;">
         <div class="result-icon">😈</div>
         <h1>IL FAKER VINCE!</h1>
-        <p class="result-message">Il faker e riuscito a non farsi scoprire!</p>
+        <p class="result-message">Il faker è riuscito a non farsi scoprire!</p>
+        <p class="eliminated-name">Il Faker era: <span id="fakerNameEnd"></span></p>
     </div>
 
     <div class="button-container">
-        <button class="rounded-button" onclick="playAgain()">Gioca Ancora</button>
-        <button class="rounded-button" onclick="goHome()">Torna al Menu</button>
+        <button class="rounded-button end-game-button" onclick="playAgain()">Gioca Ancora</button>
+        <button class="rounded-button end-game-button" onclick="goHome()">Torna al Menu</button>
     </div>
 
     <script>
@@ -119,14 +42,32 @@
         const gameResult = sessionStorage.getItem('gameResult');
         const eliminated = sessionStorage.getItem('eliminated');
 
-        if (gameResult === 'players_win') {
-            document.getElementById('playersWin').style.display = 'block';
-            document.getElementById('fakerName').textContent = eliminated + ' era il Faker!';
-            document.body.classList.add('players-win');
-        } else {
-            document.getElementById('fakerWins').style.display = 'block';
-            document.body.classList.add('faker-wins');
+        async function initEndScreen() {
+            if (gameResult === 'players_win') {
+                document.getElementById('playersWin').style.display = 'block';
+                document.getElementById('fakerName').textContent = eliminated + ' era il Faker!';
+                document.body.classList.add('players-win');
+            } else {
+                document.getElementById('fakerWins').style.display = 'block';
+                document.body.classList.add('faker-wins');
+
+                // Cerca chi era il faker
+                if (roomId) {
+                    const { data: fakerPlayer } = await supabaseClient
+                        .from('players')
+                        .select('name')
+                        .eq('room_id', roomId)
+                        .eq('is_faker', true)
+                        .single();
+
+                    if (fakerPlayer) {
+                        document.getElementById('fakerNameEnd').textContent = fakerPlayer.name;
+                    }
+                }
+            }
         }
+
+        initEndScreen();
 
         async function playAgain() {
             // Pulisci i dati del gioco ma mantieni la stanza
