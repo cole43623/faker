@@ -105,6 +105,15 @@
             margin-left: 0.5rem;
         }
 
+        .you-badge {
+            background-color: #f39c12;
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.3rem;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+
         /* Modal Popup Styles */
         .modal-overlay {
             position: fixed;
@@ -228,6 +237,21 @@
         </div>
     </div>
 
+    <!-- Confirm Vote Modal -->
+    <div id="confirmVoteModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-icon">🤔</div>
+            <div class="modal-title">Conferma Voto</div>
+            <div class="modal-message">Vuoi davvero eliminare <span id="confirmVoteName"></span>?</div>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button class="modal-button" style="background-color: #6c757d; color: white;"
+                    onclick="closeConfirmModal()">Annulla</button>
+                <button class="modal-button" style="background-color: #04AA6D; color: white;"
+                    id="confirmVoteBtn">Conferma</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // CONFIGURAZIONE SUPABASE
         const SUPABASE_URL = 'https://iiwcqemmtdmzzgiytlqr.supabase.co';
@@ -267,6 +291,10 @@
             }
         }
 
+        function closeConfirmModal() {
+            document.getElementById('confirmVoteModal').style.display = 'none';
+        }
+
         async function initVoting() {
             // Mostra la domanda
             const domanda = sessionStorage.getItem('onlineDomanda') || 'Indica qualcuno...';
@@ -296,6 +324,23 @@
             activePlayers = allPlayers.filter(p => !eliminatedPlayers.includes(p.name));
             amIEliminated = eliminatedPlayers.includes(playerName);
 
+            // Controlla lo stato della stanza (redirect se necessario)
+            if (currentRoom.status === 'finished') {
+                if (currentRoom.winner === 'players') {
+                    sessionStorage.setItem('gameResult', 'players_win');
+                } else {
+                    sessionStorage.setItem('gameResult', 'faker_wins');
+                }
+                sessionStorage.setItem('eliminated', currentRoom.eliminated || '');
+                window.location.href = 'online_end.html';
+                return;
+            } else if (currentRoom.status === 'playing') {
+                // Pulisci la domanda dalla sessione
+                sessionStorage.removeItem('onlineDomanda');
+                window.location.href = 'online_game1.html';
+                return;
+            }
+
             // Se sono eliminato, mostro solo lo stato di osservatore
             if (amIEliminated) {
                 showEliminatedState();
@@ -310,6 +355,9 @@
 
             renderButtons();
             subscribeToVotes();
+
+            // Controlla se tutti hanno gia votato (in caso di rejoin)
+            checkAllVoted();
         }
 
         function showEliminatedState() {
@@ -336,6 +384,12 @@
                 const voteCount = Object.values(votes).filter(v => v === player.name).length;
 
                 let buttonText = player.name;
+
+                // Aggiungi badge "TU" se è il giocatore corrente
+                if (player.name === playerName) {
+                    buttonText += ' <span class="you-badge">TU</span>';
+                }
+
                 if (voteCount > 0) {
                     buttonText += ` <span class="vote-count">${voteCount}</span>`;
                 }
@@ -346,7 +400,7 @@
 
                 button.innerHTML = buttonText;
                 button.disabled = myVote !== null;
-                button.onclick = () => castVote(player.name);
+                button.onclick = () => confirmVote(player.name);
 
                 buttonWrapper.appendChild(button);
                 buttonContainer.appendChild(buttonWrapper);
@@ -364,6 +418,18 @@
             } else {
                 waitingStatus.innerHTML = '';
             }
+        }
+
+        async function confirmVote(votedFor) {
+            if (myVote || amIEliminated) return;
+
+            document.getElementById('confirmVoteName').textContent = votedFor;
+            document.getElementById('confirmVoteModal').style.display = 'flex';
+
+            document.getElementById('confirmVoteBtn').onclick = () => {
+                closeConfirmModal();
+                castVote(votedFor);
+            };
         }
 
         async function castVote(votedFor) {

@@ -252,6 +252,15 @@
 
             currentRoom = room;
 
+            // Redirect se lo stato è cambiato mentre eravamo offline
+            if (currentRoom.status === 'voting') {
+                window.location.href = 'online_game2.html';
+                return;
+            } else if (currentRoom.status === 'finished') {
+                window.location.href = 'online_end.html';
+                return;
+            }
+
             // Carica i giocatori
             const { data: playersData } = await supabaseClient
                 .from('players')
@@ -345,6 +354,9 @@
             }
             document.getElementById('readyStatus').style.display = 'block';
 
+            // Controlla se siamo già pronti per avanzare (in caso di rejoin)
+            checkAllReady();
+
             // Sottoscrivi agli aggiornamenti
             subscribeToChanges();
         }
@@ -416,11 +428,11 @@
 
             if (isReady) {
                 readyBtn.disabled = true;
-                readyBtn.textContent = 'SEI PRONTO!';
+                readyBtn.textContent = 'ATTENDI GIOCATORI...';
                 document.getElementById('waitingText').style.display = 'block';
             } else {
                 readyBtn.disabled = false;
-                readyBtn.textContent = 'PRONTO!';
+                readyBtn.textContent = 'VOTI!';
                 document.getElementById('waitingText').style.display = 'none';
             }
         }

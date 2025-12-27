@@ -147,7 +147,7 @@
                     .from('players')
                     .select('id')
                     .eq('room_id', roomData.id)
-                    .eq('name', playerName)
+                    .ilike('name', playerName)
                     .single();
 
                 if (existingPlayer) {
