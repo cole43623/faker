@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -9,13 +10,17 @@
       margin: 0;
       padding: 0;
       font-family: Arial, sans-serif;
-      background-color: #6f42c1; /* Sfondo viola */
-      color: #fff; /* Testo bianco */
-      min-height: 100vh; /* Usa vh per altezza responsive */
+      background-color: #6f42c1;
+      /* Sfondo viola */
+      color: #fff;
+      /* Testo bianco */
+      min-height: 100vh;
+      /* Usa vh per altezza responsive */
       display: flex;
       justify-content: center;
       align-items: center;
-      flex-direction: column; /* Allineamento verticale */
+      flex-direction: column;
+      /* Allineamento verticale */
     }
 
     .container {
@@ -25,37 +30,48 @@
     .button-container {
       display: flex;
       justify-content: center;
-      margin-top: 2vh; /* Usa vh per margine responsivo */
+      margin-top: 2vh;
+      /* Usa vh per margine responsivo */
       flex-direction: column;
     }
 
     .rounded-button {
-      padding: 1em 2em; /* Usa em per rendere la dimensione del bottone scalabile */
+      padding: 1em 2em;
+      /* Usa em per rendere la dimensione del bottone scalabile */
       margin-bottom: 1em;
       border: none;
-      border-radius: 1.5em; /* Bordo arrotondato */
-      background-color: #fff; /* Sfondo bianco */
-      color: #6f42c1; /* Testo viola */
-      font-size: 1rem; /* Usa rem per la dimensione del testo */
+      border-radius: 1.5em;
+      /* Bordo arrotondato */
+      background-color: #fff;
+      /* Sfondo bianco */
+      color: #6f42c1;
+      /* Testo viola */
+      font-size: 1rem;
+      /* Usa rem per la dimensione del testo */
       cursor: pointer;
       transition: background-color 0.3s, color 0.3s;
     }
 
     .rounded-button:hover {
-      background-color: #6f42c1; /* Sfondo viola al passaggio del mouse */
-      color: #fff; /* Testo bianco al passaggio del mouse */
+      background-color: #6f42c1;
+      /* Sfondo viola al passaggio del mouse */
+      color: #fff;
+      /* Testo bianco al passaggio del mouse */
     }
 
     .slider-container {
       text-align: center;
-      margin-top: 2vh; /* Usa vh per margine responsivo */
+      margin-top: 2vh;
+      /* Usa vh per margine responsivo */
     }
 
     .slider {
       -webkit-appearance: none;
-      width: 80%; /* Percentuale per adattarsi al contenitore */
-      height: 0.8em; /* Usa em per una dimensione scalabile */
-      border-radius: 0.5em;  
+      width: 80%;
+      /* Percentuale per adattarsi al contenitore */
+      height: 0.8em;
+      /* Usa em per una dimensione scalabile */
+      border-radius: 0.5em;
       background: #d3d3d3;
       outline: none;
       opacity: 0.7;
@@ -65,15 +81,17 @@
     .slider::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
-      width: 1.5em; /* Usa em per una dimensione scalabile */
+      width: 1.5em;
+      /* Usa em per una dimensione scalabile */
       height: 1.5em;
-      border-radius: 50%; 
+      border-radius: 50%;
       background: #04AA6D;
       cursor: pointer;
     }
 
     .slider::-moz-range-thumb {
-      width: 1.5em; /* Usa em per una dimensione scalabile */
+      width: 1.5em;
+      /* Usa em per una dimensione scalabile */
       height: 1.5em;
       border-radius: 50%;
       background: #04AA6D;
@@ -92,13 +110,24 @@
       }
 
       .slider {
-        width: 90%; /* Aumenta la larghezza dello slider per schermi piccoli */
+        width: 90%;
+        /* Aumenta la larghezza dello slider per schermi piccoli */
       }
     }
   </style>
 </head>
+
 <body>
-  <div class="container">
+  <div id="main-menu-container" class="container">
+    <h1>Faker</h1>
+    <div class="button-container">
+      <button class="rounded-button" onclick="showLocalMode()">Modalità Locale</button>
+      <button class="rounded-button" onclick="createRoom()">Crea Stanza</button>
+      <button class="rounded-button" onclick="joinRoom()">Unisciti a Stanza</button>
+    </div>
+  </div>
+
+  <div id="local-mode-container" class="container" style="display: none;">
     <h1>Numero di giocatori</h1>
     <div class="slidecontainer">
       <input type="range" min="3" max="16" value="4" class="slider" id="numeroGiocatori">
@@ -112,16 +141,33 @@
   <script>
     var slider = document.getElementById("numeroGiocatori");
     var output = document.getElementById("nr");
+    var mainMenu = document.getElementById("main-menu-container");
+    var localMode = document.getElementById("local-mode-container");
+
     output.innerHTML = slider.value;
+
+    function showLocalMode() {
+      mainMenu.style.display = "none";
+      localMode.style.display = "block";
+    }
+
+    function createRoom() {
+      window.location.href = 'create.html';
+    }
+
+    function joinRoom() {
+      window.location.href = 'join.html';
+    }
 
     function azione1() {
       var url = 'setnames.html?nr=' + slider.value;
       window.location.href = url;
     }
 
-    slider.oninput = function() {
+    slider.oninput = function () {
       output.innerHTML = this.value;
     }
   </script>
 </body>
+
 </html>

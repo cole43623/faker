@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Unisciti a Stanza</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #6f42c1;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 1rem;
+        }
+
+        .container {
+            text-align: center;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 2vh;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .rounded-button {
+            padding: 1em 2em;
+            margin-bottom: 1em;
+            border: none;
+            border-radius: 1.5em;
+            background-color: #fff;
+            color: #6f42c1;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+            width: 70%;
+            max-width: 340px;
+        }
+
+        .rounded-button:hover {
+            background-color: #5a359d;
+            color: #fff;
+        }
+
+        .rounded-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .text-input {
+            padding: 0.8em;
+            margin: 0.5em 0;
+            border-radius: 20px;
+            border: 1px solid #6f42c1;
+            width: 100%;
+            max-width: 300px;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .code-input {
+            font-size: 1.5rem;
+            letter-spacing: 0.3rem;
+            font-weight: bold;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .back-link {
+            color: white;
+            text-decoration: underline;
+            margin-top: 1rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Unisciti a Stanza</h1>
+        <div class="button-container">
+            <input type="text" id="roomCode" class="text-input code-input" placeholder="Codice (4 cifre)" maxlength="4"
+                inputmode="numeric" pattern="[0-9]*">
+            <input type="text" id="playerName" class="text-input" placeholder="Il tuo nickname" maxlength="20">
+            <button id="joinBtn" class="rounded-button" onclick="joinRoom()">Entra</button>
+            <a class="back-link" href="index.html">Indietro</a>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURAZIONE SUPABASE
+        const SUPABASE_URL = 'https://iiwcqemmtdmzzgiytlqr.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_pBR3LS6E0PEXe7cbSRuu_g_JOGA9rY-';
+
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function joinRoom() {
+            const roomCode = document.getElementById('roomCode').value.trim();
+            const playerName = document.getElementById('playerName').value.trim();
+
+            if (!roomCode || roomCode.length !== 4) {
+                alert("Inserisci un codice stanza valido (4 cifre).");
+                return;
+            }
+
+            if (!playerName) {
+                alert("Inserisci il tuo nickname.");
+                return;
+            }
+
+            const joinBtn = document.getElementById('joinBtn');
+            joinBtn.disabled = true;
+            joinBtn.textContent = 'Connessione...';
+
+            try {
+                // Cerca la stanza
+                const { data: roomData, error: roomError } = await supabaseClient
+                    .from('rooms')
+                    .select('*')
+                    .eq('code', roomCode)
+                    .eq('status', 'waiting')
+                    .single();
+
+                if (roomError || !roomData) {
+                    throw new Error('Stanza non trovata o partita gia iniziata.');
+                }
+
+                // Verifica che il nickname non sia gia in uso nella stanza
+                const { data: existingPlayer } = await supabaseClient
+                    .from('players')
+                    .select('id')
+                    .eq('room_id', roomData.id)
+                    .eq('name', playerName)
+                    .single();
+
+                if (existingPlayer) {
+                    throw new Error('Questo nickname e gia in uso nella stanza.');
+                }
+
+                // Aggiungi il giocatore
+                const { error: playerError } = await supabaseClient
+                    .from('players')
+                    .insert([{
+                        room_id: roomData.id,
+                        name: playerName,
+                        is_host: false,
+                        is_faker: false
+                    }]);
+
+                if (playerError) throw playerError;
+
+                // Salva in sessionStorage
+                sessionStorage.setItem('roomId', roomData.id);
+                sessionStorage.setItem('roomCode', roomCode);
+                sessionStorage.setItem('playerName', playerName);
+                sessionStorage.setItem('isHost', 'false');
+
+                // Vai alla lobby
+                window.location.href = 'lobby.html';
+
+            } catch (error) {
+                console.error('Errore:', error);
+                alert('Errore: ' + error.message);
+                joinBtn.disabled = false;
+                joinBtn.textContent = 'Entra';
+            }
+        }
+
+        // Formatta automaticamente il codice stanza
+        document.getElementById('roomCode').addEventListener('input', function (e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    </script>
+</body>
+
+</html>

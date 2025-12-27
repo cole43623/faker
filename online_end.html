@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fine Partita</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #6f42c1;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 1rem;
+        }
+
+        .container {
+            text-align: center;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .result-icon {
+            font-size: 5rem;
+            margin: 1rem 0;
+        }
+
+        .result-message {
+            font-size: 1.5rem;
+            margin: 1rem 0;
+            opacity: 0.9;
+        }
+
+        .eliminated-name {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #f39c12;
+            margin: 1rem 0;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 2rem;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .rounded-button {
+            padding: 1em 2em;
+            margin-bottom: 1em;
+            border: none;
+            border-radius: 1.5em;
+            background-color: #fff;
+            color: #6f42c1;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+            width: 70%;
+            max-width: 340px;
+        }
+
+        .rounded-button:hover {
+            background-color: #5a359d;
+            color: #fff;
+        }
+
+        .players-win {
+            background-color: #04AA6D;
+        }
+
+        .faker-wins {
+            background-color: #e74c3c;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container" id="playersWin" style="display: none;">
+        <div class="result-icon">🎉</div>
+        <h1>I GIOCATORI VINCONO!</h1>
+        <p class="result-message">Il faker è stato scoperto!</p>
+        <p class="eliminated-name" id="fakerName"></p>
+    </div>
+
+    <div class="container" id="fakerWins" style="display: none;">
+        <div class="result-icon">😈</div>
+        <h1>IL FAKER VINCE!</h1>
+        <p class="result-message">Il faker e riuscito a non farsi scoprire!</p>
+    </div>
+
+    <div class="button-container">
+        <button class="rounded-button" onclick="playAgain()">Gioca Ancora</button>
+        <button class="rounded-button" onclick="goHome()">Torna al Menu</button>
+    </div>
+
+    <script>
+        // CONFIGURAZIONE SUPABASE
+        const SUPABASE_URL = 'https://iiwcqemmtdmzzgiytlqr.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_pBR3LS6E0PEXe7cbSRuu_g_JOGA9rY-';
+
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const roomId = sessionStorage.getItem('roomId');
+        const isHost = sessionStorage.getItem('isHost') === 'true';
+        const gameResult = sessionStorage.getItem('gameResult');
+        const eliminated = sessionStorage.getItem('eliminated');
+
+        if (gameResult === 'players_win') {
+            document.getElementById('playersWin').style.display = 'block';
+            document.getElementById('fakerName').textContent = eliminated + ' era il Faker!';
+            document.body.classList.add('players-win');
+        } else {
+            document.getElementById('fakerWins').style.display = 'block';
+            document.body.classList.add('faker-wins');
+        }
+
+        async function playAgain() {
+            // Pulisci i dati del gioco ma mantieni la stanza
+            sessionStorage.removeItem('gameResult');
+            sessionStorage.removeItem('eliminated');
+            sessionStorage.removeItem('onlineDomanda');
+            sessionStorage.removeItem('onlineDomi');
+
+            // Resetta lo stato della stanza nel database (solo l'host o il primo che clicca)
+            if (roomId) {
+                await supabaseClient
+                    .from('rooms')
+                    .update({
+                        status: 'waiting',
+                        current_question: null,
+                        ind: null,
+                        votes: {},
+                        ready_players: [],
+                        eliminated_players: [],
+                        winner: null,
+                        eliminated: null,
+                        last_eliminated: null
+                    })
+                    .eq('id', roomId);
+
+                // Resetta is_faker per tutti i giocatori
+                await supabaseClient
+                    .from('players')
+                    .update({ is_faker: false })
+                    .eq('room_id', roomId);
+            }
+
+            // Torna alla lobby per una nuova partita
+            window.location.href = 'lobby.html';
+        }
+
+        function goHome() {
+            sessionStorage.clear();
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+
+</html>

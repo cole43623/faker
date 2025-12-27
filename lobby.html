@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lobby</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #6f42c1;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 1rem;
+        }
+
+        .container {
+            text-align: center;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .room-code {
+            font-size: 2.5rem;
+            font-weight: bold;
+            letter-spacing: 0.5rem;
+            margin-bottom: 1rem;
+            color: #fff;
+        }
+
+        .players-list {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            padding: 1rem;
+            margin: 1rem 0;
+            min-height: 150px;
+        }
+
+        .player-item {
+            padding: 0.8rem;
+            margin: 0.5rem 0;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .player-name {
+            font-size: 1.2rem;
+        }
+
+        .host-badge {
+            background-color: #04AA6D;
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.3rem;
+            font-size: 0.8rem;
+        }
+
+        .you-badge {
+            background-color: #f39c12;
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.3rem;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 2vh;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .rounded-button {
+            padding: 1em 2em;
+            margin-bottom: 1em;
+            border: none;
+            border-radius: 1.5em;
+            background-color: #fff;
+            color: #6f42c1;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+            width: 70%;
+            max-width: 340px;
+        }
+
+        .rounded-button:hover {
+            background-color: #5a359d;
+            color: #fff;
+        }
+
+        .rounded-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .start-button {
+            background-color: #04AA6D;
+            color: white;
+        }
+
+        .start-button:hover {
+            background-color: #038a58;
+        }
+
+        .status-message {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 1rem;
+        }
+
+        .back-link {
+            color: white;
+            text-decoration: underline;
+            margin-top: 1rem;
+            cursor: pointer;
+        }
+
+        .waiting-animation {
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Stanza</h1>
+        <div id="roomCode" class="room-code"></div>
+
+        <div class="players-list">
+            <h3>Giocatori (<span id="playerCount">0</span>)</h3>
+            <div id="playersList"></div>
+        </div>
+
+        <div class="button-container">
+            <button id="startBtn" class="rounded-button start-button" onclick="startGame()" style="display: none;">
+                Inizia Partita
+            </button>
+            <p id="waitingMessage" class="status-message">
+                <span class="waiting-animation">In attesa che l'host avvii la partita...</span>
+            </p>
+        </div>
+
+        <a class="back-link" onclick="leaveRoom()">Abbandona Stanza</a>
+    </div>
+
+    <script>
+        // CONFIGURAZIONE SUPABASE
+        const SUPABASE_URL = 'https://iiwcqemmtdmzzgiytlqr.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_pBR3LS6E0PEXe7cbSRuu_g_JOGA9rY-';
+
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const roomId = sessionStorage.getItem('roomId');
+        const roomCode = sessionStorage.getItem('roomCode');
+        const playerName = sessionStorage.getItem('playerName');
+        const isHost = sessionStorage.getItem('isHost') === 'true';
+
+        if (!roomId || !playerName) {
+            window.location.href = 'index.html';
+        }
+
+        document.getElementById('roomCode').textContent = roomCode;
+
+        if (isHost) {
+            document.getElementById('startBtn').style.display = 'block';
+            document.getElementById('waitingMessage').innerHTML = '<span class="waiting-animation">In attesa di altri giocatori...</span>';
+        }
+
+        let playersSubscription = null;
+        let roomSubscription = null;
+
+        async function loadPlayers() {
+            const { data: players, error } = await supabaseClient
+                .from('players')
+                .select('*')
+                .eq('room_id', roomId)
+                .order('created_at', { ascending: true });
+
+            if (error) {
+                console.error('Errore caricamento giocatori:', error);
+                return;
+            }
+
+            // Se non ci sono giocatori, la stanza è vuota
+            if (players.length === 0) {
+                return;
+            }
+
+            // Controlla se esiste un host
+            const currentHost = players.find(p => p.is_host);
+
+            if (!currentHost && players.length > 0) {
+                // Non c'è host - solo il primo giocatore (per ordine di creazione) 
+                // tenta di diventare host per evitare race condition
+                const potentialNewHost = players[0];
+
+                // Solo se IO sono il primo giocatore, provo a diventare host
+                if (potentialNewHost.name === playerName) {
+                    // Uso un update condizionale: aggiorno solo se is_host è ancora false
+                    // Questo previene race condition a livello database
+                    const { data: updated, error: updateError } = await supabaseClient
+                        .from('players')
+                        .update({ is_host: true })
+                        .eq('id', potentialNewHost.id)
+                        .eq('is_host', false) // Condizione: solo se non è già host
+                        .select();
+
+                    if (!updateError && updated && updated.length > 0) {
+                        // Sono diventato host con successo
+                        sessionStorage.setItem('isHost', 'true');
+                        window.location.reload();
+                        return;
+                    }
+                }
+
+                // Ricarica i giocatori per vedere chi è diventato host
+                // (aspetta un attimo per dare tempo all'altro client)
+                setTimeout(() => loadPlayers(), 500);
+                return;
+            }
+
+            renderPlayers(players);
+        }
+
+        function renderPlayers(players) {
+            const playersList = document.getElementById('playersList');
+            const playerCount = document.getElementById('playerCount');
+
+            playerCount.textContent = players.length;
+            playersList.innerHTML = '';
+
+            players.forEach(player => {
+                const div = document.createElement('div');
+                div.className = 'player-item';
+
+                let badges = '';
+                if (player.is_host) badges += '<span class="host-badge">HOST</span>';
+                if (player.name === playerName) badges += '<span class="you-badge">TU</span>';
+
+                div.innerHTML = `
+                    <span class="player-name">${player.name}</span>
+                    <div>${badges}</div>
+                `;
+                playersList.appendChild(div);
+            });
+
+            // Abilita il pulsante start solo se ci sono almeno 3 giocatori
+            if (isHost) {
+                const startBtn = document.getElementById('startBtn');
+                startBtn.disabled = players.length < 3;
+                if (players.length < 3) {
+                    document.getElementById('waitingMessage').innerHTML =
+                        '<span class="waiting-animation">Servono almeno 3 giocatori per iniziare...</span>';
+                } else {
+                    document.getElementById('waitingMessage').innerHTML =
+                        '<span class="waiting-animation">Pronto per iniziare!</span>';
+                }
+            }
+        }
+
+        async function startGame() {
+            if (!isHost) return;
+
+            const { data: players } = await supabaseClient
+                .from('players')
+                .select('*')
+                .eq('room_id', roomId);
+
+            if (players.length < 3) {
+                alert('Servono almeno 3 giocatori per iniziare!');
+                return;
+            }
+
+            // Scegli un faker casuale (ma Simone non può mai essere il faker 😇)
+            let faker;
+            do {
+                const fakerIndex = Math.floor(Math.random() * players.length);
+                faker = players[fakerIndex];
+            } while (faker.name === 'Simone');
+
+            // Aggiorna il faker nel database
+            await supabaseClient
+                .from('players')
+                .update({ is_faker: true })
+                .eq('id', faker.id);
+
+            // Salva l'ordine dei giocatori
+            const playerNames = players.map(p => p.name);
+
+            // Aggiorna lo stato della stanza
+            await supabaseClient
+                .from('rooms')
+                .update({
+                    status: 'playing',
+                    player_order: playerNames,
+                    current_player_index: 0
+                })
+                .eq('id', roomId);
+        }
+
+        async function leaveRoom() {
+            if (confirm('Vuoi davvero abbandonare la stanza?')) {
+                await supabaseClient
+                    .from('players')
+                    .delete()
+                    .eq('room_id', roomId)
+                    .eq('name', playerName);
+
+                sessionStorage.clear();
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Sottoscrizione in tempo reale per i giocatori
+        function subscribeToPlayers() {
+            playersSubscription = supabaseClient
+                .channel('players-channel-' + roomId)
+                .on('postgres_changes',
+                    { event: 'INSERT', schema: 'public', table: 'players', filter: `room_id=eq.${roomId}` },
+                    (payload) => {
+                        console.log('Player joined:', payload);
+                        loadPlayers();
+                    }
+                )
+                .on('postgres_changes',
+                    { event: 'DELETE', schema: 'public', table: 'players' },
+                    (payload) => {
+                        console.log('Player left:', payload);
+                        loadPlayers();
+                    }
+                )
+                .on('postgres_changes',
+                    { event: 'UPDATE', schema: 'public', table: 'players', filter: `room_id=eq.${roomId}` },
+                    (payload) => {
+                        console.log('Player updated:', payload);
+                        loadPlayers();
+                    }
+                )
+                .subscribe((status) => {
+                    console.log('Subscription status:', status);
+                });
+        }
+
+        // Sottoscrizione in tempo reale per lo stato della stanza
+        function subscribeToRoom() {
+            roomSubscription = supabaseClient
+                .channel('room-channel')
+                .on('postgres_changes',
+                    { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` },
+                    (payload) => {
+                        if (payload.new.status === 'playing') {
+                            window.location.href = 'online_game1.html';
+                        }
+                    }
+                )
+                .subscribe();
+        }
+
+        // Inizializzazione
+        loadPlayers();
+        subscribeToPlayers();
+        subscribeToRoom();
+
+        // Cleanup quando si lascia la pagina
+        window.addEventListener('beforeunload', () => {
+            if (playersSubscription) playersSubscription.unsubscribe();
+            if (roomSubscription) roomSubscription.unsubscribe();
+        });
+    </script>
+</body>
+
+</html>

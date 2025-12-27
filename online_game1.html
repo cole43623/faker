@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Online</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="domande.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #6f42c1;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        header {
+            width: 100%;
+            background-color: #5a359d;
+            padding: 1rem;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2rem;
+            color: #fff;
+        }
+
+        .container {
+            text-align: center;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .rounded-button {
+            padding: 1em 2em;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 20px;
+            background-color: #fff;
+            color: #6f42c1;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+            width: 100%;
+            max-width: 85%;
+        }
+
+        .rounded-button:hover {
+            background-color: #5a359d;
+            color: #fff;
+        }
+
+        .rounded-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .question-box {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin: 1rem 0;
+            font-size: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .faker-message {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .eliminated-message {
+            color: #95a5a6;
+            font-style: italic;
+        }
+
+        .player-name {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            margin-bottom: 1rem;
+        }
+
+        .ready-status {
+            margin-top: 1rem;
+            font-size: 1rem;
+        }
+
+        .ready-count {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 0.5rem 0;
+        }
+
+        .waiting-animation {
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            .question-box {
+                font-size: 1.3rem;
+                padding: 1.5rem;
+            }
+
+            .rounded-button {
+                font-size: 1.3rem;
+            }
+        }
+
+        /* Stili per la selezione domanda di Simone */
+        .simone-picker {
+            display: none;
+            margin-top: 1rem;
+        }
+
+        .picker-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
+        .picker-btn {
+            padding: 0.8em 1.5em;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .picker-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-approve {
+            background-color: #04AA6D;
+            color: white;
+        }
+
+        .btn-repick {
+            background-color: #f39c12;
+            color: white;
+        }
+
+        .simone-badge {
+            background-color: #f39c12;
+            color: #333;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1><span id="titolo"></span></h1>
+    </header>
+    <div class="container">
+        <p class="player-name">Ciao, <strong id="playerNameDisplay"></strong>!</p>
+
+        <div class="question-box">
+            <div id="questionContent"> In attesa dei giocatori...</div>
+        </div>
+
+        <!-- Pulsanti per Simone per scegliere la domanda -->
+        <div id="simonePicker" class="simone-picker">
+            <div class="simone-badge">👑 Simone sceglie la domanda</div>
+            <div class="picker-buttons">
+                <button class="picker-btn btn-approve" onclick="approveQuestion()">✓ Approva</button>
+                <button class="picker-btn btn-repick" onclick="repickQuestion()">🔄 Ripesca</button>
+            </div>
+        </div>
+
+        <div class="button-container">
+            <button id="readyBtn" class="rounded-button" onclick="markReady()" style="display: none;">PRONTO!</button>
+        </div>
+
+        <div class="ready-status" id="readyStatus" style="display: none;">
+            <p class="ready-count"><span id="readyCount">0</span> / <span id="totalCount">0</span> pronti</p>
+            <p id="waitingText" class="waiting-animation" style="display: none;">In attesa degli altri...</p>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURAZIONE SUPABASE
+        const SUPABASE_URL = 'https://iiwcqemmtdmzzgiytlqr.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_pBR3LS6E0PEXe7cbSRuu_g_JOGA9rY-';
+
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const roomId = sessionStorage.getItem('roomId');
+        const playerName = sessionStorage.getItem('playerName');
+
+        if (!roomId || !playerName) {
+            window.location.href = 'index.html';
+        }
+
+        document.getElementById('playerNameDisplay').textContent = playerName;
+
+        let currentRoom = null;
+        let activePlayers = []; // Solo giocatori ancora in gioco
+        let myPlayer = null;
+        let domanda = null;
+        let isReady = false;
+        let amIEliminated = false;
+
+        async function initGame() {
+            // Carica i dati della stanza
+            const { data: room } = await supabaseClient
+                .from('rooms')
+                .select('*')
+                .eq('id', roomId)
+                .single();
+
+            currentRoom = room;
+
+            // Carica i giocatori
+            const { data: playersData } = await supabaseClient
+                .from('players')
+                .select('*')
+                .eq('room_id', roomId)
+                .order('created_at', { ascending: true });
+
+            // Filtra solo i giocatori attivi (non eliminati)
+            const eliminatedPlayers = currentRoom.eliminated_players || [];
+            activePlayers = playersData.filter(p => !eliminatedPlayers.includes(p.name));
+
+            myPlayer = playersData.find(p => p.name === playerName);
+            amIEliminated = eliminatedPlayers.includes(playerName);
+
+            // Controlla se devo resettare lo stato per un nuovo round
+            const readyPlayers = currentRoom.ready_players || [];
+            isReady = readyPlayers.includes(playerName);
+
+            // Controlla se c'è Simone tra i giocatori attivi
+            const simonePlayer = activePlayers.find(p => p.name === 'Simone');
+            const isSimone = playerName === 'Simone';
+            const isHost = sessionStorage.getItem('isHost') === 'true';
+
+            // Genera o recupera la domanda dalla stanza
+            if (currentRoom.current_question) {
+                domanda = currentRoom.current_question;
+            } else {
+                // Chi genera la domanda? Simone se presente, altrimenti l'host
+                const shouldIPick = simonePlayer ? isSimone : isHost;
+
+                if (shouldIPick) {
+                    // Genera una domanda casuale
+                    const domi = Math.floor(Math.random() * dom.length);
+                    domanda = dom[domi];
+                    currentRoom.ind = domi;
+
+                    if (isSimone) {
+                        // Simone vede la domanda e può approvarla o ripescarla
+                        showSimonePickerUI(domanda, domi);
+                        subscribeToChanges();
+                        return; // Non proseguire finché Simone non approva
+                    } else {
+                        // L'host salva direttamente
+                        await supabaseClient
+                            .from('rooms')
+                            .update({
+                                current_question: domanda,
+                                ready_players: [],
+                                ind: domi
+                            })
+                            .eq('id', roomId);
+
+                        isReady = false;
+                    }
+                } else {
+                    // Aspetta che Simone/host generi la domanda
+                    setTimeout(initGame, 500);
+                    return;
+                }
+            }
+
+            sessionStorage.setItem('onlineDomanda', domanda);
+
+            // Imposta il titolo
+            const ti = document.getElementById("titolo");
+
+            // Mostra la domanda (o messaggio faker/eliminato)
+            const questionContent = document.getElementById('questionContent');
+            if (currentRoom.ind < 108) {
+                ti.innerHTML = "INDICA QUALCUNO";
+            } else if (currentRoom.ind < 218) {
+                ti.innerHTML = "ALZA UN NUMERO DI DITA";
+            } else {
+                ti.innerHTML = "ALZA LA MANO";
+            }
+            if (amIEliminated) {
+                // Eliminato
+                ti.innerHTML = "SEI STATO ELIMINATO";
+                questionContent.innerHTML = `<p class="eliminated-message">👻 Sei stato eliminato!</p>`;
+                document.getElementById('readyBtn').style.display = 'none';
+                document.getElementById('readyCount').parentElement.innerHTML =
+                    '<p class="waiting-animation">In attesa che gli altri giochino...</p>';
+            } else if (myPlayer.is_faker) {
+                questionContent.innerHTML = '<p class="faker-message">🎭 Sei il FAKER! 🎭</p><p>Rip sei il faker, buona fortuna.</p>';
+                document.getElementById('readyBtn').style.display = 'block';
+                updateReadyUI();
+            } else {
+                questionContent.innerHTML = `<p>${domanda}</p>`;
+                document.getElementById('readyBtn').style.display = 'block';
+                updateReadyUI();
+            }
+            document.getElementById('readyStatus').style.display = 'block';
+
+            // Sottoscrivi agli aggiornamenti
+            subscribeToChanges();
+        }
+
+        function showEliminatedState(question) {
+            document.getElementById("titolo").innerHTML = "SEI STATO ELIMINATO";
+            const questionText = question ? `<p>La domanda era:</p><p><em>${question}</em></p>` : '';
+            document.getElementById('questionContent').innerHTML =
+                `<p class="eliminated-message">👻 Sei stato eliminato!</p>${questionText}`;
+            document.getElementById('readyBtn').style.display = 'none';
+            document.getElementById('readyCount').parentElement.innerHTML =
+                '<p class="waiting-animation">In attesa che gli altri finiscano...</p>';
+        }
+
+        // Variabili per Simone picker
+        let currentPickedDomi = null;
+        let currentPickedDomanda = null;
+
+        function showSimonePickerUI(question, domi) {
+            currentPickedDomi = domi;
+            currentPickedDomanda = question;
+
+            const ti = document.getElementById("titolo");
+            ti.innerHTML = "👑 SCEGLI LA DOMANDA";
+
+            const questionContent = document.getElementById('questionContent');
+            questionContent.innerHTML = `<p>${question}</p>`;
+
+            // Mostra i pulsanti di Simone
+            document.getElementById('simonePicker').style.display = 'block';
+            // Nascondi il pulsante PRONTO finché non approva
+            document.getElementById('readyBtn').style.display = 'none';
+        }
+
+        async function approveQuestion() {
+            // Simone ha approvato la domanda, salvala nel database
+            await supabaseClient
+                .from('rooms')
+                .update({
+                    current_question: currentPickedDomanda,
+                    ready_players: [],
+                    ind: currentPickedDomi
+                })
+                .eq('id', roomId);
+
+            // Nascondi il picker e mostra il pulsante PRONTO
+            document.getElementById('simonePicker').style.display = 'none';
+            document.getElementById('readyBtn').style.display = 'block';
+
+            // Ricarica per mostrare la UI normale
+            initGame();
+        }
+
+        function repickQuestion() {
+            // Genera una nuova domanda casuale
+            const domi = Math.floor(Math.random() * dom.length);
+            const newDomanda = dom[domi];
+
+            // Aggiorna la UI
+            showSimonePickerUI(newDomanda, domi);
+        }
+
+        function updateReadyUI() {
+            const readyPlayers = currentRoom.ready_players || [];
+            document.getElementById('readyCount').textContent = readyPlayers.length;
+            document.getElementById('totalCount').textContent = activePlayers.length;
+
+            const readyBtn = document.getElementById('readyBtn');
+
+            if (isReady) {
+                readyBtn.disabled = true;
+                readyBtn.textContent = 'SEI PRONTO!';
+                document.getElementById('waitingText').style.display = 'block';
+            } else {
+                readyBtn.disabled = false;
+                readyBtn.textContent = 'PRONTO!';
+                document.getElementById('waitingText').style.display = 'none';
+            }
+        }
+
+        async function markReady() {
+            if (isReady || amIEliminated) return;
+
+            isReady = true;
+            updateReadyUI();
+
+            // Ricarica la stanza per avere i dati aggiornati
+            const { data: freshRoom } = await supabaseClient
+                .from('rooms')
+                .select('ready_players')
+                .eq('id', roomId)
+                .single();
+
+            const currentReady = freshRoom.ready_players || [];
+            if (!currentReady.includes(playerName)) {
+                currentReady.push(playerName);
+
+                await supabaseClient
+                    .from('rooms')
+                    .update({ ready_players: currentReady })
+                    .eq('id', roomId);
+            }
+        }
+
+        async function checkAllReady() {
+            const readyPlayers = currentRoom.ready_players || [];
+
+            if (readyPlayers.length >= activePlayers.length && activePlayers.length > 0) {
+                // Tutti pronti, vai alla votazione
+                // Determina chi può far avanzare il gioco:
+                // 1. Se l'host è ancora attivo, solo l'host
+                // 2. Altrimenti, il primo giocatore attivo (per ordine alfabetico dei nomi nei ready)
+
+                const isHost = sessionStorage.getItem('isHost') === 'true';
+                const eliminatedPlayers = currentRoom.eliminated_players || [];
+                const hostIsActive = !eliminatedPlayers.includes(playerName) && isHost;
+
+                // Ordina i giocatori pronti per determinare chi è il "leader"
+                const sortedReadyPlayers = [...readyPlayers].sort();
+                const amIFirstReady = sortedReadyPlayers[0] === playerName;
+
+                // Può far avanzare: l'host se attivo, altrimenti il primo in ordine alfabetico
+                const canAdvance = hostIsActive || (!eliminatedPlayers.some(e => {
+                    // Controlla se l'host originale è eliminato
+                    // In quel caso, il primo giocatore pronto può avanzare
+                    return true; // Semplificato: se l'host non è attivo, controlla se sono il primo
+                }) && amIFirstReady && !isHost);
+
+                // Semplificazione: se sono io il primo tra i ready e tutti sono pronti, avanzo
+                if (amIFirstReady && !amIEliminated) {
+                    await supabaseClient
+                        .from('rooms')
+                        .update({ status: 'voting' })
+                        .eq('id', roomId)
+                        .eq('status', 'playing'); // Condizione per evitare race condition
+                }
+            }
+        }
+
+        function subscribeToChanges() {
+            supabaseClient
+                .channel('room-game-channel-' + roomId + '-' + Date.now())
+                .on('postgres_changes',
+                    { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` },
+                    async (payload) => {
+                        currentRoom = payload.new;
+
+                        if (currentRoom.status === 'voting') {
+                            window.location.href = 'online_game2.html';
+                            return;
+                        }
+
+                        if (currentRoom.status === 'finished') {
+                            window.location.href = 'online_end.html';
+                            return;
+                        }
+
+                        // Aggiorna la lista dei giocatori eliminati
+                        const eliminatedPlayers = currentRoom.eliminated_players || [];
+                        if (eliminatedPlayers.includes(playerName) && !amIEliminated) {
+                            amIEliminated = true;
+                            showEliminatedState();
+                        }
+
+                        if (!amIEliminated) {
+                            // Ricalcola i giocatori attivi
+                            const { data: playersData } = await supabaseClient
+                                .from('players')
+                                .select('*')
+                                .eq('room_id', roomId);
+                            activePlayers = playersData.filter(p => !eliminatedPlayers.includes(p.name));
+
+                            updateReadyUI();
+                            checkAllReady();
+                        }
+                    }
+                )
+                .subscribe();
+        }
+
+        initGame();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Crea Stanza</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #6f42c1;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 1rem;
+        }
+
+        .container {
+            text-align: center;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 2vh;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .rounded-button {
+            padding: 1em 2em;
+            margin-bottom: 1em;
+            border: none;
+            border-radius: 1.5em;
+            background-color: #fff;
+            color: #6f42c1;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+            width: 70%;
+            max-width: 340px;
+        }
+
+        .rounded-button:hover {
+            background-color: #5a359d;
+            color: #fff;
+        }
+
+        .rounded-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .text-input {
+            padding: 0.8em;
+            margin: 0.5em 0;
+            border-radius: 20px;
+            border: 1px solid #6f42c1;
+            width: 100%;
+            max-width: 300px;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .back-link {
+            color: white;
+            text-decoration: underline;
+            margin-top: 1rem;
+            cursor: pointer;
+        }
+
+        .room-code {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 1rem 0;
+            letter-spacing: 0.5rem;
+        }
+
+        .status-message {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Crea Nuova Stanza</h1>
+        <div class="button-container">
+            <input type="text" id="playerName" class="text-input" placeholder="Il tuo nickname" maxlength="20">
+            <button id="createBtn" class="rounded-button" onclick="createRoom()">Crea Stanza</button>
+            <a class="back-link" href="index.html">Indietro</a>
+        </div>
+        <div id="roomInfo" style="display: none;">
+            <p>Codice Stanza:</p>
+            <div id="roomCode" class="room-code"></div>
+            <p class="status-message">Condividi questo codice con gli altri giocatori!</p>
+            <button class="rounded-button" onclick="goToLobby()">Vai alla Lobby</button>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURAZIONE SUPABASE
+        const SUPABASE_URL = 'https://iiwcqemmtdmzzgiytlqr.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_pBR3LS6E0PEXe7cbSRuu_g_JOGA9rY-';
+
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let createdRoomCode = null;
+
+        function generateRoomCode() {
+            return Math.floor(1000 + Math.random() * 9000).toString();
+        }
+
+        async function createRoom() {
+            const playerName = document.getElementById('playerName').value.trim();
+
+            if (!playerName) {
+                alert("Inserisci il tuo nickname.");
+                return;
+            }
+
+            const createBtn = document.getElementById('createBtn');
+            createBtn.disabled = true;
+            createBtn.textContent = 'Creazione...';
+
+            try {
+                let roomCode = generateRoomCode();
+                let attempts = 0;
+
+                // Verifica che il codice sia unico
+                while (attempts < 10) {
+                    const { data: existing } = await supabaseClient
+                        .from('rooms')
+                        .select('id')
+                        .eq('code', roomCode)
+                        .single();
+
+                    if (!existing) break;
+                    roomCode = generateRoomCode();
+                    attempts++;
+                }
+
+                // Crea la stanza
+                const { data: roomData, error: roomError } = await supabaseClient
+                    .from('rooms')
+                    .insert([{
+                        code: roomCode,
+                        status: 'waiting',
+                        created_at: new Date().toISOString()
+                    }])
+                    .select()
+                    .single();
+
+                if (roomError) throw roomError;
+
+                // Aggiungi il creatore come primo giocatore (host)
+                const { error: playerError } = await supabaseClient
+                    .from('players')
+                    .insert([{
+                        room_id: roomData.id,
+                        name: playerName,
+                        is_host: true,
+                        is_faker: false
+                    }]);
+
+                if (playerError) throw playerError;
+
+                createdRoomCode = roomCode;
+
+                // Salva in sessionStorage
+                sessionStorage.setItem('roomId', roomData.id);
+                sessionStorage.setItem('roomCode', roomCode);
+                sessionStorage.setItem('playerName', playerName);
+                sessionStorage.setItem('isHost', 'true');
+
+                // Redirect automatico alla lobby
+                window.location.href = 'lobby.html';
+
+            } catch (error) {
+                console.error('Errore:', error);
+                alert('Errore durante la creazione della stanza: ' + error.message);
+                createBtn.disabled = false;
+                createBtn.textContent = 'Crea Stanza';
+            }
+        }
+
+        function goToLobby() {
+            window.location.href = 'lobby.html';
+        }
+    </script>
+</body>
+
+</html>
