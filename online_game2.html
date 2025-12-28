@@ -417,8 +417,6 @@
 
             if (amIEliminated) {
                 showEliminatedState();
-                subscribeToVotes();
-                return;
             }
 
             if (votes[playerName]) {
@@ -431,11 +429,10 @@
         }
 
         function showEliminatedState() {
-            const domanda = sessionStorage.getItem('onlineDomanda') || '';
-            document.querySelector('h1').innerHTML = `<span id="dom" style="color:white;opacity:0.7">OSSERVATORE</span><span class="voting-sub">👻 SEI STATO ELIMINATO</span>`;
+            const domanda = sessionStorage.getItem('onlineDomanda') || 'Votazione';
+            document.querySelector('h1').innerHTML = `<span id="dom">${domanda}</span><span class="voting-sub" style="color:white;opacity:0.8">👻 ${playerName} (OSSERVATORE)</span>`;
             document.getElementById('waitingStatus').innerHTML =
-                '<div class="waiting-animation">Stai guardando come spettatore...</div>';
-            document.getElementById('button-container').style.display = 'none';
+                '<div class="waiting-animation">Guarda le votazioni in tempo reale...</div>';
             updateWaitingStatus();
         }
 
@@ -470,7 +467,7 @@
                     button.classList.add('voted');
                 }
 
-                button.disabled = myVote !== null;
+                button.disabled = myVote !== null || amIEliminated;
                 button.onclick = () => confirmVote(player.name);
 
                 buttonWrapper.appendChild(button);
@@ -645,12 +642,8 @@
                                 showResultModal('⚖️', 'Pareggio!', 'Nessuno è stato eliminato. Si va al prossimo round!');
                             }
                         } else {
-                            if (!amIEliminated) {
-                                renderButtons();
-                                checkAllVoted();
-                            } else {
-                                updateWaitingStatus();
-                            }
+                            renderButtons();
+                            checkAllVoted();
                         }
                     }
                 )

@@ -53,14 +53,38 @@
             font-size: 5rem;
             display: block;
             margin-bottom: 1rem;
-            animation: popIcon 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both 0.3s;
+            animation: popIcon 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both 0.3s,
+                bounce 2s infinite 1s;
         }
 
         .result-subtitle {
             font-size: 1.2rem;
             opacity: 0.9;
-            margin-bottom: 2.5rem;
+            margin-bottom: 1rem;
             animation: fadeIn 1s ease both 0.6s;
+        }
+
+        .faker-name {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #fff;
+            margin: 1rem 0 2.5rem 0;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.5rem 1.5rem;
+            border-radius: 15px;
+            display: inline-block;
+            animation: fadeIn 1s ease both 0.8s;
+        }
+
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 2rem;
+            align-items: center;
+            width: 100%;
+            z-index: 10;
         }
 
         .rounded-button {
@@ -74,12 +98,13 @@
             cursor: pointer;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
             transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
-            animation: slideUp 0.8s ease both 0.8s;
+            animation: slideUp 0.8s ease both 1s;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
-            margin: 0 auto;
+            width: 100%;
+            max-width: 350px;
         }
 
         .rounded-button:hover {
@@ -146,6 +171,25 @@
             }
         }
 
+        @keyframes bounce {
+
+            0%,
+            20%,
+            50%,
+            80%,
+            100% {
+                transform: translateY(0);
+            }
+
+            40% {
+                transform: translateY(-20px);
+            }
+
+            60% {
+                transform: translateY(-10px);
+            }
+        }
+
         /* Ambient particles */
         .particle {
             position: absolute;
@@ -162,9 +206,11 @@
         <span class="emoji" id="icon">🎉</span>
         <h1 id="messaggio">Caricamento...</h1>
         <p class="result-subtitle" id="subtitle">Una partita leggendaria è giunta al termine.</p>
-        <button class="rounded-button" onclick="azione()">
-            <span>🔄</span> Rigioca
-        </button>
+        <p class="faker-name" id="fakerNameDisplay" style="display: none;"></p>
+        <div class="button-container">
+            <button class="rounded-button" onclick="playAgain()"><span>🔄</span> Rigioca</button>
+            <button class="rounded-button" onclick="goHome()"><span>🏠</span> Torna al Menu</button>
+        </div>
     </div>
 
     <script>
@@ -174,23 +220,45 @@
         const messaggioElement = document.getElementById('messaggio');
         const iconElement = document.getElementById('icon');
         const subtitleElement = document.getElementById('subtitle');
+        const fNameDisplay = document.getElementById('fakerNameDisplay');
+
+        const allPlayers = JSON.parse(sessionStorage.getItem("allPlayers")) || [];
+        const nomeList = JSON.parse(sessionStorage.getItem("remainingPlayers")) || [];
+        const fakerIndex = parseInt(sessionStorage.getItem("faker"), 10);
+        let fakerName = sessionStorage.getItem("fakerName");
+
+        // Fallback se fakerName non è presente
+        if (!fakerName && nomeList.length > 0 && (fakerIndex || fakerIndex === 0)) {
+            fakerName = nomeList[fakerIndex];
+        } else if (!fakerName) {
+            fakerName = "Sconosciuto";
+        }
+
+        fNameDisplay.style.display = 'inline-block';
 
         if (vincitore === 'faker') {
             messaggioElement.textContent = "Il Faker Vince!";
             iconElement.textContent = "😈";
-            subtitleElement.textContent = "L'inganno ha trionfato. Il Faker è rimasto nell'ombra!";
+            subtitleElement.textContent = "Il faker è riuscito a non farsi scoprire!";
+            fNameDisplay.innerHTML = `Il Faker era: <strong>${fakerName}</strong>`;
+
             document.documentElement.style.setProperty('--primary', '#c62828');
             document.documentElement.style.setProperty('--primary-dark', '#8e0000');
             document.documentElement.style.setProperty('--bg-gradient', 'radial-gradient(circle at 50% 50%, #d32f2f 0%, #8e0000 100%)');
         } else {
             messaggioElement.textContent = "Avete Vinto!";
             iconElement.textContent = "🏆";
-            subtitleElement.textContent = "Ottimo lavoro di squadra! Il Faker è stato smascherato.";
+            subtitleElement.textContent = "Il faker è stato scoperto!";
+            fNameDisplay.innerHTML = `<strong>${fakerName}</strong> era il Faker`;
         }
 
-        function azione() {
+        function goHome() {
             sessionStorage.clear();
             window.location.href = "index.html";
+        }
+
+        function playAgain() {
+            window.location.href = 'setnames.html?nr=' + allPlayers.length;
         }
 
         // Add some random particles

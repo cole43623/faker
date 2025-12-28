@@ -115,6 +115,17 @@
         function goToLobby() {
             window.location.href = 'lobby.html';
         }
+
+        // Add some random particles
+        for (let i = 0; i < 15; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            const size = Math.random() * 80 + 20;
+            p.style.width = p.style.height = size + 'px';
+            p.style.left = Math.random() * 100 + 'vw';
+            p.style.top = Math.random() * 100 + 'vh';
+            document.body.appendChild(p);
+        }
     </script>
 </body>
 

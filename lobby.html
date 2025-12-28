@@ -45,7 +45,7 @@
         const isHost = sessionStorage.getItem('isHost') === 'true';
 
         if (!roomId || !playerName) {
-            window.location.href = 'index.html';
+            window.location.href = 'join.html';
         }
 
         document.getElementById('roomCode').textContent = roomCode;
@@ -70,7 +70,13 @@
                 return;
             }
 
-            // Se non ci sono giocatori, la stanza è vuota
+            // Se non ci sono giocatori, la stanza è vuota. Se IO non sono più nei giocatori, sono stato espulso.
+            const me = players.find(p => p.name === playerName);
+            if (!me && players.length > 0) {
+                window.location.href = 'join.html';
+                return;
+            }
+
             if (players.length === 0) {
                 return;
             }
@@ -126,9 +132,15 @@
                 if (player.is_host) badges += '<span class="host-badge">HOST</span>';
                 if (player.name === playerName) badges += '<span class="you-badge">TU</span>';
 
+                let kickButton = '';
+                // Mostra bottone kick solo se sono host e non è il mio utente
+                if (isHost && player.name !== playerName) {
+                    kickButton = `<button class="kick-btn" onclick="kickPlayer('${player.id}', '${player.name}')" title="Espelli">✕</button>`;
+                }
+
                 div.innerHTML = `
                     <span class="player-name">${player.name}</span>
-                    <div>${badges}</div>
+                    <div style="display:flex;align-items:center">${badges}${kickButton}</div>
                 `;
                 playersList.appendChild(div);
             });
@@ -200,6 +212,22 @@
             }
         }
 
+        async function kickPlayer(playerId, playerNameKicked) {
+            if (!confirm(`Vuoi espellere ${playerNameKicked} dalla stanza?`)) return;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('players')
+                    .delete()
+                    .eq('id', playerId);
+
+                if (error) throw error;
+            } catch (error) {
+                console.error('Errore espulsione:', error);
+                alert('Impossibile espellere il giocatore.');
+            }
+        }
+
         // Sottoscrizione in tempo reale per i giocatori
         function subscribeToPlayers() {
             playersSubscription = supabaseClient
@@ -215,6 +243,12 @@
                     { event: 'DELETE', schema: 'public', table: 'players' },
                     (payload) => {
                         console.log('Player left:', payload);
+                        // Se sono stato io ad essere rimosso (kick o altro), torno alla home/join
+                        if (payload.old.name === playerName) {
+                            alert("Sei stato rimosso dalla stanza.");
+                            sessionStorage.clear();
+                            window.location.href = 'join.html';
+                        }
                         loadPlayers();
                     }
                 )
@@ -246,9 +280,22 @@
         }
 
         // Inizializzazione
+        checkRoomStatus();
         loadPlayers();
         subscribeToPlayers();
         subscribeToRoom();
+
+        async function checkRoomStatus() {
+            const { data: room, error } = await supabaseClient
+                .from('rooms')
+                .select('status')
+                .eq('id', roomId)
+                .single();
+
+            if (room && room.status === 'playing') {
+                window.location.href = 'online_game1.html';
+            }
+        }
 
         // Cleanup quando si lascia la pagina
         window.addEventListener('beforeunload', () => {

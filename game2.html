@@ -148,6 +148,101 @@
         transform: translateY(0);
       }
     }
+
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(5px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .modal-content {
+      background: var(--white);
+      color: var(--text);
+      border-radius: 30px;
+      padding: 2.5rem;
+      text-align: center;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+      animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .modal-icon {
+      font-size: 4rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .modal-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--primary);
+    }
+
+    .modal-message {
+      font-size: 1.1rem;
+      opacity: 0.8;
+      margin-bottom: 1.5rem;
+      line-height: 1.4;
+      color: #555;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .modal-btn {
+      padding: 1rem 1.5rem;
+      border: none;
+      border-radius: 50px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s, background-color 0.2s;
+      flex: 1;
+    }
+
+    .btn-confirm {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-cancel {
+      background: #e9ecef;
+      color: #495057;
+    }
+
+    .btn-continue {
+      background: var(--primary);
+      color: white;
+      width: 100%;
+    }
+
+    .modal-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
   </style>
 </head>
 
@@ -165,9 +260,32 @@
     </button>
   </div>
 
+  <!-- Modal Risultato -->
+  <div id="resultModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-icon" id="modalIcon">😲</div>
+      <div class="modal-title" id="modalTitle">Risultato</div>
+      <div class="modal-message" id="modalMessage">Messaggio</div>
+      <button class="modal-btn btn-continue" onclick="closeResultModal()">CONTINUA</button>
+    </div>
+  </div>
+
+  <!-- Modal Conferma -->
+  <div id="confirmModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-icon" id="confirmIcon">🤔</div>
+      <div class="modal-title" id="confirmTitle">Conferma</div>
+      <div class="modal-message" id="confirmMessage">Messaggio di conferma</div>
+      <div class="modal-actions">
+        <button class="modal-btn btn-cancel" onclick="closeConfirmModal()">Annulla</button>
+        <button class="modal-btn btn-confirm" id="confirmActionBtn">OK</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Recupera l'array dal sessionStorage
-    const retrievedArrayAsString = sessionStorage.getItem("class");
+    const retrievedArrayAsString = sessionStorage.getItem("remainingPlayers");
     const nome = JSON.parse(retrievedArrayAsString);
     const domanda = sessionStorage.getItem("domanda");
     var fakerIndex = parseInt(sessionStorage.getItem("faker"), 10);
@@ -188,32 +306,61 @@
       buttonContainer.appendChild(button);
     });
 
+    function showResultModal(icon, title, message, callback) {
+      document.getElementById('modalIcon').textContent = icon;
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalMessage').textContent = message;
+      document.getElementById('resultModal').style.display = 'flex';
+      window.pendingResultCallback = callback;
+    }
+
+    function closeResultModal() {
+      document.getElementById('resultModal').style.display = 'none';
+      if (window.pendingResultCallback) window.pendingResultCallback();
+    }
+
+    function showConfirmModal(icon, title, message, confirmBtnText, onConfirm) {
+      document.getElementById('confirmIcon').textContent = icon;
+      document.getElementById('confirmTitle').textContent = title;
+      document.getElementById('confirmMessage').textContent = message;
+      const btn = document.getElementById('confirmActionBtn');
+      btn.textContent = confirmBtnText;
+      btn.onclick = () => {
+        closeConfirmModal();
+        onConfirm();
+      };
+      document.getElementById('confirmModal').style.display = 'flex';
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('confirmModal').style.display = 'none';
+    }
+
     function azione2(index) {
-      // Simple confirmation
-      if (!confirm(`Vuoi davvero eliminare ${nome[index]}?`)) return;
-
-      if (index === fakerIndex) {
-        window.location.href = "fine.html?vincitore=citizens";
-      } else {
-        alert(`😲 ${nome[index]} era innocente!`);
-
-        if (index < fakerIndex) fakerIndex -= 1;
-        nome.splice(index, 1);
-
-        if (nome.length <= 2) {
-          window.location.href = "fine.html?vincitore=faker";
+      showConfirmModal('🤔', 'Sei sicuro?', `Vuoi davvero eliminare ${nome[index]}?`, 'ELIMINA', () => {
+        if (index === fakerIndex) {
+          window.location.href = "fine.html?vincitore=citizens";
         } else {
-          sessionStorage.setItem("class", JSON.stringify(nome));
-          sessionStorage.setItem("faker", fakerIndex);
-          window.location.href = "game1.html";
+          showResultModal('😲', 'Innocente!', `${nome[index]} era innocente!`, () => {
+            if (index < fakerIndex) fakerIndex -= 1;
+            nome.splice(index, 1);
+
+            if (nome.length <= 2) {
+              window.location.href = "fine.html?vincitore=faker";
+            } else {
+              sessionStorage.setItem("remainingPlayers", JSON.stringify(nome));
+              sessionStorage.setItem("faker", fakerIndex);
+              window.location.href = "game1.html";
+            }
+          });
         }
-      }
+      });
     }
 
     function astensione() {
-      if (confirm("Nessuno verrà eliminato per questo round. Continuare?")) {
+      showConfirmModal('⚖️', 'Astensione', "Nessuno verrà eliminato per questo round. Continuare?", 'CONTINUA', () => {
         window.location.href = "game1.html";
-      }
+      });
     }
   </script>
 </body>

@@ -44,10 +44,14 @@
         arrayMisto.push(inputs[i].value);
       }
       var arrayAsString = JSON.stringify(arrayMisto);
-      sessionStorage.setItem("class", arrayAsString);
-      var faker = Math.floor(Math.random() * arrayMisto.length);
-      while (arrayMisto[faker] == "Simones") faker = Math.floor(Math.random() * arrayMisto.length);
+      sessionStorage.setItem("remainingPlayers", arrayAsString);
+      sessionStorage.setItem("allPlayers", arrayAsString);
+      var faker;
+      do {
+        faker = Math.floor(Math.random() * arrayMisto.length);
+      } while (arrayMisto[faker] == "Simones");
       sessionStorage.setItem("faker", faker);
+      sessionStorage.setItem("fakerName", arrayMisto[faker]);
       window.location.href = "game1.html";
     }
 
@@ -56,12 +60,19 @@
       var container = document.getElementById('textInputsContainer');
       container.innerHTML = ''; // Pulisce il contenuto precedente
 
+      const savedPlayersStr = sessionStorage.getItem("allPlayers");
+      const savedPlayers = savedPlayersStr ? JSON.parse(savedPlayersStr) : [];
+
       for (var i = 0; i < N; i++) {
         var input = document.createElement('input');
         input.type = 'text';
         input.className = 'text-input';
         input.placeholder = 'Giocatore ' + (i + 1); // Etichetta placeholder
         input.maxLength = 20; // Limite di 20 caratteri per ciascuna casella di testo
+
+        if (savedPlayers[i]) {
+          input.value = savedPlayers[i];
+        }
 
         // Aggiungi l'evento keydown per spostare il focus alla casella successiva
         input.addEventListener('keydown', function (event) {
@@ -79,6 +90,17 @@
     }
 
     creaCaselleDiTesto(parseInt(nr));
+
+    // Add some random particles
+    for (let i = 0; i < 15; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = Math.random() * 80 + 20;
+      p.style.width = p.style.height = size + 'px';
+      p.style.left = Math.random() * 100 + 'vw';
+      p.style.top = Math.random() * 100 + 'vh';
+      document.body.appendChild(p);
+    }
   </script>
 </body>
 
