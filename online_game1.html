@@ -1,116 +1,240 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Online</title>
+    <title>Game Online | Faker</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="domande.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #6f42c1;
+            --primary-dark: #4834d4;
+            --accent: #ffc107;
+            --bg: #f4f7f6;
+            --text-dark: #2d3436;
+            --white: #ffffff;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
-            background-color: #6f42c1;
-            color: #fff;
-            min-height: 100vh;
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--primary);
+            background-image: linear-gradient(135deg, #6f42c1 0%, #4834d4 100%);
+            color: var(--white);
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            padding: 1rem;
+            overflow-x: hidden;
         }
 
         header {
-            width: 100%;
-            background-color: #5a359d;
-            padding: 1rem;
+            padding: 0.8rem;
+            padding-top: 3rem;
             text-align: center;
-            border-radius: 10px;
-            margin-bottom: 2rem;
         }
 
         header h1 {
             margin: 0;
-            font-size: 2rem;
-            color: #fff;
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.8rem 2.2rem;
+            border-radius: 50px;
+            display: inline-block;
+            backdrop-filter: blur(10px);
+            text-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
 
-        .container {
-            text-align: center;
-            width: 100%;
-            max-width: 600px;
-        }
-
-        .button-container {
+        .main-container {
+            flex: 1;
             display: flex;
+            flex-direction: column;
             justify-content: center;
-            margin-top: 20px;
+            align-items: center;
+            padding: 1.5rem;
         }
 
-        .rounded-button {
-            padding: 1em 2em;
-            margin-bottom: 10px;
-            border: none;
-            border-radius: 20px;
-            background-color: #fff;
-            color: #6f42c1;
-            font-size: 1.5rem;
-            cursor: pointer;
-            transition: background-color 0.3s, color 0.3s;
+        .card {
+            background: var(--white);
+            color: var(--text-dark);
             width: 100%;
-            max-width: 85%;
+            max-width: 450px;
+            border-radius: 30px;
+            padding: 2.5rem;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            animation: fadeInScale 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
         }
 
-        .rounded-button:hover {
-            background-color: #5a359d;
-            color: #fff;
-        }
-
-        .rounded-button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
+        .player-intro {
+            font-size: 2rem;
+            opacity: 0.7;
+            margin-bottom: 1rem;
+            display: block;
         }
 
         .question-box {
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 1rem;
-            padding: 2rem;
-            margin: 1rem 0;
-            font-size: 1.5rem;
-            line-height: 1.6;
+            min-height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            font-weight: 500;
+            line-height: 1.4;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 20px;
+            border: 2px dashed #dee2e6;
+            transition: all 0.3s ease;
         }
 
-        .faker-message {
-            color: #e74c3c;
-            font-weight: bold;
+        .simone-section {
+            background: #fff8e1;
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 2px solid var(--accent);
+            animation: slideDown 0.4s ease both;
         }
 
-        .eliminated-message {
-            color: #95a5a6;
-            font-style: italic;
-        }
-
-        .player-name {
-            font-size: 1.2rem;
-            opacity: 0.8;
+        .simone-badge {
+            background-color: var(--accent);
+            color: #333;
+            padding: 0.4rem 1rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 700;
             margin-bottom: 1rem;
-        }
-
-        .ready-status {
-            margin-top: 1rem;
-            font-size: 1rem;
-        }
-
-        .ready-count {
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin: 0.5rem 0;
-        }
-
-        .waiting-animation {
             display: inline-block;
+            text-transform: uppercase;
+        }
+
+        .btn-group-horizontal {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 1rem 1.5rem;
+            border: none;
+            border-radius: 18px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 15px rgba(111, 66, 193, 0.3);
+        }
+
+        .btn-primary:not(:disabled):hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(111, 66, 193, 0.4);
+        }
+
+        .btn-primary:disabled {
+            background: #cbd5e0;
+            box-shadow: none;
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+
+        .btn-sm {
+            padding: 0.7rem 1.2rem;
+            font-size: 0.9rem;
+            width: auto;
+        }
+
+        .btn-green {
+            background: #04AA6D;
+            color: white;
+        }
+
+        .btn-orange {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn-faker {
+            background: #ff4757;
+            color: white;
+        }
+
+        .progress-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #edf2f7;
+        }
+
+        .ready-count-text {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #4a5568;
+            margin-bottom: 0.5rem;
+        }
+
+        .waiting-text {
+            font-size: 0.9rem;
+            color: var(--primary);
+            font-weight: 500;
             animation: pulse 1.5s infinite;
+        }
+
+        .faker-text {
+            color: #d32f2f;
+            font-weight: 700;
+        }
+
+        .eliminated-text {
+            color: #718096;
+            font-style: italic;
+            opacity: 0.8;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         @keyframes pulse {
@@ -124,98 +248,44 @@
                 opacity: 0.5;
             }
         }
-
-        @media (max-width: 768px) {
-            header h1 {
-                font-size: 1.8rem;
-            }
-
-            .question-box {
-                font-size: 1.3rem;
-                padding: 1.5rem;
-            }
-
-            .rounded-button {
-                font-size: 1.3rem;
-            }
-        }
-
-        /* Stili per la selezione domanda di Simone */
-        .simone-picker {
-            display: none;
-            margin-top: 1rem;
-        }
-
-        .picker-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            margin-top: 1rem;
-        }
-
-        .picker-btn {
-            padding: 0.8em 1.5em;
-            border: none;
-            border-radius: 15px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .picker-btn:hover {
-            transform: scale(1.05);
-        }
-
-        .btn-approve {
-            background-color: #04AA6D;
-            color: white;
-        }
-
-        .btn-repick {
-            background-color: #f39c12;
-            color: white;
-        }
-
-        .simone-badge {
-            background-color: #f39c12;
-            color: #333;
-            padding: 0.3rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
-            display: inline-block;
-        }
     </style>
 </head>
 
 <body>
     <header>
-        <h1><span id="titolo"></span></h1>
+        <h1>🎮 <span id="titolo">CARICAMENTO...</span></h1>
     </header>
-    <div class="container">
-        <p class="player-name">Ciao, <strong id="playerNameDisplay"></strong>!</p>
 
-        <div class="question-box">
-            <div id="questionContent"> In attesa dei giocatori...</div>
-        </div>
+    <div class="main-container">
+        <div class="card">
+            <span class="player-intro">Ciao, <strong id="playerNameDisplay">...</strong>! 👋</span>
 
-        <!-- Pulsanti per Simone per scegliere la domanda -->
-        <div id="simonePicker" class="simone-picker">
-            <div class="simone-badge">👑 Simone sceglie la domanda</div>
-            <div class="picker-buttons">
-                <button class="picker-btn btn-approve" onclick="approveQuestion()">✓ Approva</button>
-                <button class="picker-btn btn-repick" onclick="repickQuestion()">🔄 Ripesca</button>
-                <button class="picker-btn btn-reveal-faker" onclick="revealFaker()">🔍 Rivela Faker</button>
+            <div class="question-box" id="questionContent">
+                In attesa che la partita inizi...
             </div>
-        </div>
 
-        <div class="button-container">
-            <button id="readyBtn" class="rounded-button" onclick="markReady()" style="display: none;">PRONTO!</button>
-        </div>
+            <!-- Simone Picker UI -->
+            <div id="simonePicker" style="display: none;" class="simone-section">
+                <div class="simone-badge" id="simoneBadge">👑 Simone: Scegli domanda</div>
+                <div class="btn-group-horizontal">
+                    <button class="btn btn-sm btn-green" onclick="approveQuestion()">✓ Approva</button>
+                    <button class="btn btn-sm btn-orange" onclick="repickQuestion()">🔄 Ripesca</button>
+                    <button class="btn btn-sm btn-faker" id="btnRevealFaker" onclick="revealFaker()">🔍 Faker?</button>
+                </div>
+            </div>
 
-        <div class="ready-status" id="readyStatus" style="display: none;">
-            <p class="ready-count"><span id="readyCount">0</span> / <span id="totalCount">0</span> pronti</p>
-            <p id="waitingText" class="waiting-animation" style="display: none;">In attesa degli altri...</p>
+            <button id="readyBtn" class="btn btn-primary" onclick="markReady()" style="display: none;">
+                VOTAZIONE! ➡️
+            </button>
+
+            <div class="progress-section" id="readyStatus" style="display: none;">
+                <div class="ready-count-text">
+                    <span id="readyCount">0</span> / <span id="totalCount">0</span> pronti
+                </div>
+                <div id="waitingText" class="waiting-text" style="display: none;">
+                    In attesa degli altri giocatori...
+                </div>
+            </div>
         </div>
     </div>
 
@@ -237,14 +307,13 @@
         document.getElementById('playerNameDisplay').textContent = playerName;
 
         let currentRoom = null;
-        let activePlayers = []; // Solo giocatori ancora in gioco
+        let activePlayers = [];
         let myPlayer = null;
         let domanda = null;
         let isReady = false;
         let amIEliminated = false;
 
         async function initGame() {
-            // Carica i dati della stanza
             const { data: room } = await supabaseClient
                 .from('rooms')
                 .select('*')
@@ -253,7 +322,6 @@
 
             currentRoom = room;
 
-            // Redirect se lo stato è cambiato mentre eravamo offline
             if (currentRoom.status === 'voting') {
                 window.location.href = 'online_game2.html';
                 return;
@@ -268,25 +336,21 @@
                 return;
             }
 
-            // Carica i giocatori
             const { data: playersData } = await supabaseClient
                 .from('players')
                 .select('*')
                 .eq('room_id', roomId)
                 .order('created_at', { ascending: true });
 
-            // Filtra solo i giocatori attivi (non eliminati)
             const eliminatedPlayers = currentRoom.eliminated_players || [];
             activePlayers = playersData.filter(p => !eliminatedPlayers.includes(p.name));
 
             myPlayer = playersData.find(p => p.name === playerName);
             amIEliminated = eliminatedPlayers.includes(playerName);
 
-            // Controlla se devo resettare lo stato per un nuovo round
             const readyPlayers = currentRoom.ready_players || [];
             isReady = readyPlayers.includes(playerName);
 
-            // Controlla se c'è Simone tra i giocatori attivi
             const simonePlayer = playersData.find(p => p.name === 'Simone');
             const isSimone = playerName === 'Simone';
             let shouldIPick;
@@ -297,23 +361,19 @@
                 shouldIPick = sessionStorage.getItem('isHost') === 'true';
             }
 
-            // Genera o recupera la domanda dalla stanza
             if (currentRoom.current_question) {
                 domanda = currentRoom.current_question;
             } else {
                 if (shouldIPick) {
-                    // Genera una domanda casuale
                     const domi = Math.floor(Math.random() * dom.length);
                     domanda = dom[domi];
                     currentRoom.ind = domi;
 
                     if (isSimone) {
-                        // Simone vede la domanda e può approvarla o ripescarla
                         showSimonePickerUI(domanda, domi);
                         subscribeToChanges();
-                        return; // Non proseguire finché Simone non approva
+                        return;
                     } else {
-                        // L'host salva direttamente
                         await supabaseClient
                             .from('rooms')
                             .update({
@@ -326,19 +386,16 @@
                         isReady = false;
                     }
                 } else {
-                    // Aspetta che Simone/host generi la domanda
-                    setTimeout(initGame, 500);
+                    setTimeout(initGame, 1000);
                     return;
                 }
             }
 
             sessionStorage.setItem('onlineDomanda', domanda);
 
-            // Imposta il titolo
             const ti = document.getElementById("titolo");
-
-            // Mostra la domanda (o messaggio faker/eliminato)
             const questionContent = document.getElementById('questionContent');
+
             if (currentRoom.ind < 109) {
                 ti.innerHTML = "INDICA QUALCUNO";
             } else if (currentRoom.ind < 220) {
@@ -346,42 +403,27 @@
             } else {
                 ti.innerHTML = "ALZA LA MANO";
             }
+
             if (amIEliminated) {
-                // Eliminato
-                ti.innerHTML = "SEI STATO ELIMINATO";
-                questionContent.innerHTML = `<p class="eliminated-message">👻 Sei stato eliminato!</p>`;
+                ti.innerHTML = "OSSERVATORE";
+                questionContent.innerHTML = `<span class="eliminated-text">👻 Sei stato eliminato! Guarda gli altri giocare...</span>`;
                 document.getElementById('readyBtn').style.display = 'none';
-                document.getElementById('readyCount').parentElement.innerHTML =
-                    '<p class="waiting-animation">Guarda gli altri giocare...</p>';
+                document.getElementById('readyStatus').style.display = 'block';
             } else if (myPlayer.is_faker) {
-                questionContent.innerHTML = '<p class="faker-message">🎭 Sei il FAKER! 🎭</p><p>Rip sei il faker, buona fortuna.</p>';
+                questionContent.innerHTML = '<div><span class="faker-text">🎭 Sei il FAKER!</span><br><br><small>Rip sei il faker, buona fortuna.</small></div>';
                 document.getElementById('readyBtn').style.display = 'block';
                 updateReadyUI();
             } else {
-                questionContent.innerHTML = `<p>${domanda}</p>`;
+                questionContent.innerHTML = `<span>${domanda}</span>`;
                 document.getElementById('readyBtn').style.display = 'block';
                 updateReadyUI();
             }
             document.getElementById('readyStatus').style.display = 'block';
 
-            // Controlla se siamo già pronti per avanzare (in caso di rejoin)
             checkAllReady();
-
-            // Sottoscrivi agli aggiornamenti
             subscribeToChanges();
         }
 
-        function showEliminatedState(question) {
-            document.getElementById("titolo").innerHTML = "SEI STATO ELIMINATO";
-            const questionText = question ? `<p>La domanda era:</p><p><em>${question}</em></p>` : '';
-            document.getElementById('questionContent').innerHTML =
-                `<p class="eliminated-message">👻 Sei stato eliminato!</p>${questionText}`;
-            document.getElementById('readyBtn').style.display = 'none';
-            document.getElementById('readyCount').parentElement.innerHTML =
-                '<p class="waiting-animation">In attesa che gli altri finiscano...</p>';
-        }
-
-        // Variabili per Simone picker
         let currentPickedDomi = null;
         let currentPickedDomanda = null;
 
@@ -390,19 +432,16 @@
             currentPickedDomanda = question;
 
             const ti = document.getElementById("titolo");
-            ti.innerHTML = "👑 SCEGLI LA DOMANDA";
+            ti.innerHTML = "SCRUTINIO";
 
             const questionContent = document.getElementById('questionContent');
-            questionContent.innerHTML = `<p>${question}</p>`;
+            questionContent.innerHTML = `<span>${question}</span>`;
 
-            // Mostra i pulsanti di Simone
             document.getElementById('simonePicker').style.display = 'block';
-            // Nascondi il pulsante PRONTO finché non approva
             document.getElementById('readyBtn').style.display = 'none';
         }
 
         async function approveQuestion() {
-            // Simone ha approvato la domanda, salvala nel database
             await supabaseClient
                 .from('rooms')
                 .update({
@@ -412,20 +451,14 @@
                 })
                 .eq('id', roomId);
 
-            // Nascondi il picker e mostra il pulsante PRONTO
             document.getElementById('simonePicker').style.display = 'none';
             document.getElementById('readyBtn').style.display = 'block';
-
-            // Ricarica per mostrare la UI normale
             initGame();
         }
 
         function repickQuestion() {
-            // Genera una nuova domanda casuale
             const domi = Math.floor(Math.random() * dom.length);
             const newDomanda = dom[domi];
-
-            // Aggiorna la UI
             showSimonePickerUI(newDomanda, domi);
         }
 
@@ -438,8 +471,8 @@
                 .single();
 
             const faker = playersData.name;
-            const btn = document.querySelector('.btn-reveal-faker');
-            btn.textContent = `🎭 Faker: ${faker}`;
+            document.getElementById('simoneBadge').innerHTML = `👑 Simone | 🕵️ Faker: <strong>${faker}</strong>`;
+            document.getElementById('btnRevealFaker').style.display = 'none';
         }
 
         function updateReadyUI() {
@@ -451,11 +484,11 @@
 
             if (isReady) {
                 readyBtn.disabled = true;
-                readyBtn.textContent = 'ATTENDI GIOCATORI...';
+                readyBtn.innerHTML = '<span>⏳</span> ATTENDI...';
                 document.getElementById('waitingText').style.display = 'block';
             } else {
                 readyBtn.disabled = false;
-                readyBtn.textContent = 'VOTI!';
+                readyBtn.innerHTML = 'VOTI! ➡️';
                 document.getElementById('waitingText').style.display = 'none';
             }
         }
@@ -466,7 +499,6 @@
             isReady = true;
             updateReadyUI();
 
-            // Ricarica la stanza per avere i dati aggiornati
             const { data: freshRoom } = await supabaseClient
                 .from('rooms')
                 .select('ready_players')
@@ -488,33 +520,15 @@
             const readyPlayers = currentRoom.ready_players || [];
 
             if (readyPlayers.length >= activePlayers.length && activePlayers.length > 0) {
-                // Tutti pronti, vai alla votazione
-                // Determina chi può far avanzare il gioco:
-                // 1. Se l'host è ancora attivo, solo l'host
-                // 2. Altrimenti, il primo giocatore attivo (per ordine alfabetico dei nomi nei ready)
-
-                const isHost = sessionStorage.getItem('isHost') === 'true';
-                const eliminatedPlayers = currentRoom.eliminated_players || [];
-                const hostIsActive = !eliminatedPlayers.includes(playerName) && isHost;
-
-                // Ordina i giocatori pronti per determinare chi è il "leader"
                 const sortedReadyPlayers = [...readyPlayers].sort();
                 const amIFirstReady = sortedReadyPlayers[0] === playerName;
 
-                // Può far avanzare: l'host se attivo, altrimenti il primo in ordine alfabetico
-                const canAdvance = hostIsActive || (!eliminatedPlayers.some(e => {
-                    // Controlla se l'host originale è eliminato
-                    // In quel caso, il primo giocatore pronto può avanzare
-                    return true; // Semplificato: se l'host non è attivo, controlla se sono il primo
-                }) && amIFirstReady && !isHost);
-
-                // Semplificazione: se sono io il primo tra i ready e tutti sono pronti, avanzo
                 if (amIFirstReady && !amIEliminated) {
                     await supabaseClient
                         .from('rooms')
                         .update({ status: 'voting' })
                         .eq('id', roomId)
-                        .eq('status', 'playing'); // Condizione per evitare race condition
+                        .eq('status', 'playing');
                 }
             }
         }
@@ -543,15 +557,16 @@
                             return;
                         }
 
-                        // Aggiorna la lista dei giocatori eliminati
                         const eliminatedPlayers = currentRoom.eliminated_players || [];
                         if (eliminatedPlayers.includes(playerName) && !amIEliminated) {
                             amIEliminated = true;
-                            showEliminatedState();
+                            const questionContent = document.getElementById('questionContent');
+                            document.getElementById("titolo").innerHTML = "OSSERVATORE";
+                            questionContent.innerHTML = `<span class="eliminated-text">👻 Sei stato eliminato! Guarda gli altri giocare...</span>`;
+                            document.getElementById('readyBtn').style.display = 'none';
                         }
 
                         if (!amIEliminated) {
-                            // Ricalcola i giocatori attivi
                             const { data: playersData } = await supabaseClient
                                 .from('players')
                                 .select('*')

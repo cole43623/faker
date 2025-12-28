@@ -1,87 +1,151 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Votazione</title>
+  <title>Votazione | Faker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --primary: #6f42c1;
+      --primary-light: #8e67d5;
+      --accent: #ffc107;
+      --accent-dark: #e5ac00;
+      --bg: #f8f9fa;
+      --white: #ffffff;
+      --text: #2d3436;
+      --danger: #ff4757;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
     body {
       margin: 0;
       padding: 0;
-      font-family: Arial, sans-serif;
-      background-color: #6f42c1;
-      /* Sfondo viola */
-      color: #fff;
-      /* Testo bianco */
-      min-height: 50vh;
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--primary);
+      background-image: linear-gradient(135deg, #6f42c1 0%, #4834d4 100%);
+      color: var(--white);
+      min-height: 100dvh;
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 1rem;
+      padding: 1.5rem;
     }
 
     .container {
       text-align: center;
       width: 100%;
-      max-width: 600px;
+      max-width: 500px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 2.5rem;
+      border-radius: 40px;
+      backdrop-filter: blur(15px);
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      animation: zoomIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
     }
 
     h1 {
-      font-size: 2rem;
-      margin-bottom: 2rem;
+      font-size: 1.5rem;
+      margin-bottom: 2.5rem;
+      line-height: 1.4;
+      font-weight: 400;
     }
 
-    .button-container {
+    #dom {
+      display: block;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+    }
+
+    .voting-title {
+      font-size: 1.1rem;
+      letter-spacing: 2px;
+      opacity: 0.8;
+      display: block;
+      margin-top: 1rem;
+    }
+
+    .button-list {
       display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 10px;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 2rem;
     }
 
     .rounded-button {
-      padding: 1em 2em;
+      padding: 1.2rem;
       border: none;
       border-radius: 20px;
-      background-color: #fff;
-      /* Sfondo bianco */
-      color: #6f42c1;
-      /* Testo viola */
+      background-color: var(--white);
+      color: var(--primary);
       font-size: 1.2rem;
+      font-weight: 700;
       cursor: pointer;
-      transition: background-color 0.3s, color 0.3s;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       width: 100%;
-      max-width: 250px;
-      /* Larghezza massima per i pulsanti */
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
     }
 
     .rounded-button:hover {
-      background-color: #6f42c1;
-      /* Sfondo viola al passaggio del mouse */
-      color: #fff;
-      /* Testo bianco al passaggio del mouse */
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+      background-color: #f8f9fa;
     }
 
-    /* Media Queries per schermi più piccoli */
-    @media (max-width: 768px) {
-      h1 {
-        font-size: 2.1rem;
+    .rounded-button:active {
+      transform: scale(0.98);
+    }
+
+    .btn-astensione {
+      background-color: var(--accent);
+      color: #333;
+      margin-top: 1.5rem;
+      border: 2px solid transparent;
+    }
+
+    .btn-astensione:hover {
+      background-color: var(--accent-dark);
+      color: #000;
+    }
+
+    @keyframes zoomIn {
+      from {
+        opacity: 0;
+        transform: scale(0.8);
       }
 
-      .rounded-button {
-        font-size: 1.6rem;
-        padding: 0.8em 1.5em;
+      to {
+        opacity: 1;
+        transform: scale(1);
       }
     }
 
-    @media (max-width: 480px) {
-      h1 {
-        font-size: 2rem;
+    .player-btn {
+      animation: slideIn 0.4s ease both;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
       }
 
-      .rounded-button {
-        font-size: 1.4rem;
-        padding: 0.8em 1.3em;
+      to {
+        opacity: 1;
+        transform: translateY(0);
       }
     }
   </style>
@@ -89,8 +153,16 @@
 
 <body>
   <div class="container">
-    <h1>"<span id="dom"></span>"<br>VOTATE CHI ELIMINARE</h1>
-    <div id="button-container"></div>
+    <h1>
+      <span id="dom">CARICAMENTO...</span>
+      <span class="voting-title">🕵️ CHI È IL FAKER?</span>
+    </h1>
+
+    <div id="button-container" class="button-list"></div>
+
+    <button class="rounded-button btn-astensione" onclick="astensione()">
+      <span>⚖️</span> ASTENSIONE
+    </button>
   </div>
 
   <script>
@@ -98,42 +170,49 @@
     const retrievedArrayAsString = sessionStorage.getItem("class");
     const nome = JSON.parse(retrievedArrayAsString);
     const domanda = sessionStorage.getItem("domanda");
-    var faker = parseInt(sessionStorage.getItem("faker"), 10);
+    var fakerIndex = parseInt(sessionStorage.getItem("faker"), 10);
 
     let output = document.getElementById("dom");
-    output.innerHTML = domanda;
-    // Seleziona il contenitore dei pulsanti
+    output.innerHTML = domanda || "VOTAZIONE";
+
     const buttonContainer = document.getElementById("button-container");
 
     // Genera dinamicamente i pulsanti
     nome.forEach((person, index) => {
-      const buttonWrapper = document.createElement("div"); // Creazione di un contenitore per ciascun pulsante
-      buttonWrapper.classList.add("button-container");
-
       const button = document.createElement("button");
-      button.classList.add("rounded-button");
-      button.textContent = person;
-      button.setAttribute("onclick", `azione2(${index})`); // Aggiungi un'azione specifica per ogni pulsante
+      button.classList.add("rounded-button", "player-btn");
+      button.style.animationDelay = (index * 0.1) + 's';
+      button.innerHTML = `👤 ${person}`;
+      button.onclick = () => azione2(index);
 
-      buttonWrapper.appendChild(button);
-      buttonContainer.appendChild(buttonWrapper);
+      buttonContainer.appendChild(button);
     });
 
     function azione2(index) {
-      if (index == faker) {
-        window.location.href = "fine1.html";
+      // Simple confirmation
+      if (!confirm(`Vuoi davvero eliminare ${nome[index]}?`)) return;
+
+      if (index === fakerIndex) {
+        window.location.href = "fine.html?vincitore=citizens";
       } else {
-        if (index < faker) faker -= 1;
-        alert(nome[index] + " era innocente.");
+        alert(`😲 ${nome[index]} era innocente!`);
+
+        if (index < fakerIndex) fakerIndex -= 1;
         nome.splice(index, 1);
-        if (nome.length == 2) {
-          window.location.href = "fine2.html";
+
+        if (nome.length <= 2) {
+          window.location.href = "fine.html?vincitore=faker";
         } else {
-          var arrayAsString = JSON.stringify(nome);
-          sessionStorage.setItem("class", arrayAsString);
-          sessionStorage.setItem("faker", faker);
+          sessionStorage.setItem("class", JSON.stringify(nome));
+          sessionStorage.setItem("faker", fakerIndex);
           window.location.href = "game1.html";
         }
+      }
+    }
+
+    function astensione() {
+      if (confirm("Nessuno verrà eliminato per questo round. Continuare?")) {
+        window.location.href = "game1.html";
       }
     }
   </script>

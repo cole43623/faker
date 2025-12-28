@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partita Finita | Faker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6f42c1;
+            --primary-dark: #5a359d;
+            --accent: #ffc107;
+            --text: #ffffff;
+            --bg-gradient: radial-gradient(circle at 50% 50%, #7e57c2 0%, #6f42c1 100%);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text);
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .container {
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            z-index: 1;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            animation: bounceIn 1s cubic-bezier(0.36, 0, 0.66, -0.56) both;
+        }
+
+        .emoji {
+            font-size: 5rem;
+            display: block;
+            margin-bottom: 1rem;
+            animation: popIcon 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both 0.3s;
+        }
+
+        .result-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 2.5rem;
+            animation: fadeIn 1s ease both 0.6s;
+        }
+
+        .rounded-button {
+            padding: 1.2rem 2.5rem;
+            border: none;
+            border-radius: 50px;
+            background-color: var(--text);
+            color: var(--primary);
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+            animation: slideUp 0.8s ease both 0.8s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 0 auto;
+        }
+
+        .rounded-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            background-color: #f8f9fa;
+        }
+
+        .rounded-button:active {
+            transform: translateY(-2px);
+        }
+
+        @keyframes bounceIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.3);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+
+            70% {
+                transform: scale(0.9);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes popIcon {
+            0% {
+                opacity: 0;
+                transform: scale(0);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Ambient particles */
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <span class="emoji" id="icon">🎉</span>
+        <h1 id="messaggio">Caricamento...</h1>
+        <p class="result-subtitle" id="subtitle">Una partita leggendaria è giunta al termine.</p>
+        <button class="rounded-button" onclick="azione()">
+            <span>🔄</span> Rigioca
+        </button>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const vincitore = urlParams.get('vincitore');
+
+        const messaggioElement = document.getElementById('messaggio');
+        const iconElement = document.getElementById('icon');
+        const subtitleElement = document.getElementById('subtitle');
+
+        if (vincitore === 'faker') {
+            messaggioElement.textContent = "Il Faker Vince!";
+            iconElement.textContent = "😈";
+            subtitleElement.textContent = "L'inganno ha trionfato. Il Faker è rimasto nell'ombra!";
+            document.documentElement.style.setProperty('--primary', '#c62828');
+            document.documentElement.style.setProperty('--primary-dark', '#8e0000');
+            document.documentElement.style.setProperty('--bg-gradient', 'radial-gradient(circle at 50% 50%, #d32f2f 0%, #8e0000 100%)');
+        } else {
+            messaggioElement.textContent = "Avete Vinto!";
+            iconElement.textContent = "🏆";
+            subtitleElement.textContent = "Ottimo lavoro di squadra! Il Faker è stato smascherato.";
+        }
+
+        function azione() {
+            sessionStorage.clear();
+            window.location.href = "index.html";
+        }
+
+        // Add some random particles
+        for (let i = 0; i < 20; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            const size = Math.random() * 50 + 10;
+            p.style.width = p.style.height = size + 'px';
+            p.style.left = Math.random() * 100 + 'vw';
+            p.style.top = Math.random() * 100 + 'vh';
+            p.style.opacity = Math.random() * 0.5;
+            document.body.appendChild(p);
+        }
+    </script>
+</body>
+
+</html>

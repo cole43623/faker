@@ -1,28 +1,211 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Game</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Fase Reveal | Faker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #6f42c1;
+      --accent: #ffc107;
+      --bg: #f4f7f6;
+      --text-dark: #2d3436;
+      --white: #ffffff;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--primary);
+      background-image: linear-gradient(135deg, #6f42c1 0%, #4834d4 100%);
+      color: var(--white);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    header {
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 0.8rem 2rem;
+      border-radius: 50px;
+      display: inline-block;
+      backdrop-filter: blur(10px);
+      text-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .main-container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+    }
+
+    .card {
+      background: var(--white);
+      color: var(--text-dark);
+      width: 100%;
+      max-width: 400px;
+      border-radius: 30px;
+      padding: 2.5rem;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .player-name {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: var(--primary);
+      display: block;
+    }
+
+    .secret-info {
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      font-weight: 500;
+      line-height: 1.4;
+      margin-bottom: 2rem;
+      padding: 1.5rem;
+      background: #f8f9fa;
+      border-radius: 20px;
+      border: 2px dashed #dee2e6;
+      transition: all 0.3s ease;
+    }
+
+    .secret-info.revealed {
+      background: #fff8e1;
+      border-color: var(--accent);
+      transform: scale(1.05);
+      border-style: solid;
+    }
+
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 1.1rem;
+      border: none;
+      border-radius: 18px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 4px 15px rgba(111, 66, 193, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(111, 66, 193, 0.4);
+    }
+
+    .btn-secondary {
+      background: #e9ecef;
+      color: #495057;
+    }
+
+    .btn-secondary:not(:disabled):hover {
+      background: #dee2e6;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      filter: grayscale(1);
+    }
+
+    /* Animations */
+    @keyframes fadeInScale {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .card {
+      animation: fadeInScale 0.5s ease-out both;
+    }
+
+    .faker-text {
+      color: #d32f2f;
+      font-weight: 700;
+    }
+  </style>
 </head>
 
 <body>
   <header>
-    <h1><span id="titolo"></span></h1>
+    <h1>🎮 <span id="titolo">PARTITA IN CORSO</span></h1>
   </header>
-  <div class="container">
-    <h1><span id="nome"></span><br><span id="richiesta"></span></h1>
-    <div class="button-container">
-      <button class="rounded-button" onclick="azione1()"><span id="pul">RIVELA</span></button>
+
+  <div class="main-container">
+    <div class="card" id="gameCard">
+      <span class="player-name" id="nome">Caricamento...</span>
+
+      <div class="secret-info" id="richiesta">
+        Clicca RIVELA per vedere la tua missione
+      </div>
+
+      <div class="button-group">
+        <button id="btnRivela" class="btn btn-primary" onclick="toggleRivela()">
+          <span id="reveallcon">👁️</span> <span id="revealText">RIVELA</span>
+        </button>
+        <button id="btnPassa" class="btn btn-secondary" onclick="passa()" disabled>
+          <span>➡️</span> PASSA
+        </button>
+      </div>
     </div>
   </div>
+
   <script src="domande.js"></script>
   <script>
     let domi = Math.floor(Math.random() * dom.length);
     sessionStorage.setItem("domanda", dom[domi]);
     let ti = document.getElementById("titolo");
+
     if (domi < 109) {
       ti.innerHTML = "INDICA QUALCUNO";
     } else if (domi < 220) {
@@ -32,37 +215,74 @@
     }
 
     const retrievedArrayAsString = sessionStorage.getItem("class");
-    const nome = JSON.parse(retrievedArrayAsString);
+    const nomeList = JSON.parse(retrievedArrayAsString);
     let output = document.getElementById("nome");
     let i = 0;
-    let flag = 1;
     const faker = parseInt(sessionStorage.getItem("faker"), 10);
-    output.innerHTML = nome[0];
-    let rich = document.getElementById("richiesta");
-    let pullo = document.getElementById("pul");
+    output.textContent = nomeList[0];
 
-    function azione1() {
-      if (i === nome.length) {
-        alert("VIA!");
-        window.location.href = "game2.html";
-      } else if (flag) {
-        flag = 0;
-        if (i % nome.length === faker) {
-          rich.innerHTML = "Rip sei il faker, buona fortuna.";
-        } else if (nome[i] === "Simones") {
-          rich.innerHTML = dom[domi] + "<br /> btw il faker è: " + nome[faker];
+    let rich = document.getElementById("richiesta");
+    const btnRivela = document.getElementById("btnRivela");
+    const btnPassa = document.getElementById("btnPassa");
+    const revealIcon = document.getElementById("reveallcon");
+    const revealText = document.getElementById("revealText");
+    let isRevealed = false;
+
+    function toggleRivela() {
+      if (isRevealed) {
+        rich.innerHTML = "Clicca RIVELA per vedere la tua missione";
+        rich.classList.remove('revealed');
+        revealText.textContent = "RIVELA";
+        revealIcon.textContent = "👁️";
+        isRevealed = false;
+      } else {
+        if (i % nomeList.length === faker) {
+          rich.innerHTML = '<span class="faker-text">👻 Sei il FAKER!</span><br><small>Rip sei il faker, buona fortuna.</small>';
+        } else if (nomeList[i] === "Simones") {
+          rich.innerHTML = `📝 ${dom[domi]}<br><small>🕵️ Il faker è: ${nomeList[faker]}</small>`;
         } else {
-          rich.innerHTML = dom[domi];
+          rich.innerHTML = `📝 ${dom[domi]}`;
         }
-        pullo.innerHTML = "NASCONDI E PASSA";
-        i += 1;
+
+        rich.classList.add('revealed');
+        btnPassa.disabled = false;
+        revealText.textContent = "NASCONDI";
+        revealIcon.textContent = "🙈";
+        isRevealed = true;
       }
-      else {
-        flag = 1;
-        output.innerHTML = nome[i % nome.length];
-        pullo.innerHTML = "RIVELA";
-        rich.innerHTML = "";
-      }
+    }
+
+    function passa() {
+      // Animazione di uscita card
+      const card = document.getElementById('gameCard');
+      card.style.transform = 'translateX(100vw) rotate(20deg)';
+      card.style.opacity = '0';
+
+      setTimeout(() => {
+        i++;
+        if (i >= nomeList.length) {
+          window.location.href = "game2.html";
+        } else {
+          // Reset card pos
+          card.style.transition = 'none';
+          card.style.transform = 'translateX(-100vw) rotate(-20deg)';
+
+          output.textContent = nomeList[i % nomeList.length];
+          rich.innerHTML = "Clicca RIVELA per vedere la tua missione";
+          rich.classList.remove('revealed');
+          btnPassa.disabled = true;
+          isRevealed = false;
+          revealText.textContent = "RIVELA";
+          revealIcon.textContent = "👁️";
+
+          // Animazione rientro
+          setTimeout(() => {
+            card.style.transition = 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s';
+            card.style.transform = 'translateX(0) rotate(0)';
+            card.style.opacity = '1';
+          }, 50);
+        }
+      }, 300);
     }
   </script>
 </body>
