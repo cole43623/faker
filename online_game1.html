@@ -322,6 +322,26 @@
 
             currentRoom = room;
 
+            const { data: playersData } = await supabaseClient
+                .from('players')
+                .select('*')
+                .eq('room_id', roomId)
+                .order('created_at', { ascending: true });
+
+            const eliminatedPlayers = currentRoom.eliminated_players || [];
+            activePlayers = playersData.filter(p => !eliminatedPlayers.includes(p.name));
+
+            myPlayer = playersData.find(p => p.name === playerName);
+            amIEliminated = eliminatedPlayers.includes(playerName);
+
+            // SELF-CLEANING: Resetto il mio vote_target (proveniente dal game 2)
+            if (myPlayer) {
+                await supabaseClient
+                    .from('players')
+                    .update({ vote_target: null })
+                    .eq('id', myPlayer.id);
+            }
+
             if (currentRoom.status === 'voting') {
                 window.location.href = 'online_game2.html';
                 return;
@@ -336,19 +356,7 @@
                 return;
             }
 
-            const { data: playersData } = await supabaseClient
-                .from('players')
-                .select('*')
-                .eq('room_id', roomId)
-                .order('created_at', { ascending: true });
-
-            const eliminatedPlayers = currentRoom.eliminated_players || [];
-            activePlayers = playersData.filter(p => !eliminatedPlayers.includes(p.name));
-
-            myPlayer = playersData.find(p => p.name === playerName);
-            amIEliminated = eliminatedPlayers.includes(playerName);
-
-            const readyPlayers = currentRoom.ready_players || [];
+            const readyPlayers = playersData.filter(p => p.is_ready).map(p => p.name);
             isReady = readyPlayers.includes(playerName);
 
             const simonePlayer = playersData.find(p => p.name === 'Simone');
@@ -358,13 +366,17 @@
             if (simonePlayer) {
                 shouldIPick = isSimone;
             } else {
-                shouldIPick = sessionStorage.getItem('isHost') === 'true';
+                // Fallback: il player attivo con ID più basso (ordine alfabetico UUID) sceglie la domanda
+                // Ordina per ID per determinismo
+                const sortedActive = [...activePlayers].sort((a, b) => a.id.localeCompare(b.id));
+                shouldIPick = (myPlayer && myPlayer.id === sortedActive[0].id);
             }
 
             if (currentRoom.current_question) {
                 domanda = currentRoom.current_question;
             } else {
                 if (shouldIPick) {
+                    console.log("devo scegliere domanda");
                     const domi = Math.floor(Math.random() * dom.length);
                     domanda = dom[domi];
                     currentRoom.ind = domi;
@@ -378,10 +390,15 @@
                             .from('rooms')
                             .update({
                                 current_question: domanda,
-                                ready_players: [],
                                 ind: domi
                             })
                             .eq('id', roomId);
+
+                        // Reset ready status for everyone locally (reflected in next fetch) or wait for page reload
+                        await supabaseClient
+                            .from('players')
+                            .update({ is_ready: false })
+                            .eq('room_id', roomId);
 
                         isReady = false;
                     }
@@ -420,7 +437,9 @@
             }
             document.getElementById('readyStatus').style.display = 'block';
 
-            checkAllReady();
+            document.getElementById('readyStatus').style.display = 'block';
+
+            checkAllReady(playersData);
             subscribeToChanges();
         }
 
@@ -446,10 +465,15 @@
                 .from('rooms')
                 .update({
                     current_question: currentPickedDomanda,
-                    ready_players: [],
                     ind: currentPickedDomi
                 })
                 .eq('id', roomId);
+
+            // Reset ready status
+            await supabaseClient
+                .from('players')
+                .update({ is_ready: false })
+                .eq('room_id', roomId);
 
             document.getElementById('simonePicker').style.display = 'none';
             document.getElementById('readyBtn').style.display = 'block';
@@ -476,8 +500,8 @@
         }
 
         function updateReadyUI() {
-            const readyPlayers = currentRoom.ready_players || [];
-            document.getElementById('readyCount').textContent = readyPlayers.length;
+            const readyPlayersCount = activePlayers.filter(p => p.is_ready).length;
+            document.getElementById('readyCount').textContent = readyPlayersCount;
             document.getElementById('totalCount').textContent = activePlayers.length;
 
             const readyBtn = document.getElementById('readyBtn');
@@ -499,27 +523,36 @@
             isReady = true;
             updateReadyUI();
 
-            const { data: freshRoom } = await supabaseClient
-                .from('rooms')
-                .select('ready_players')
-                .eq('id', roomId)
-                .single();
+            await supabaseClient
+                .from('players')
+                .update({ is_ready: true })
+                .eq('id', myPlayer.id);
 
-            const currentReady = freshRoom.ready_players || [];
-            if (!currentReady.includes(playerName)) {
-                currentReady.push(playerName);
-
-                await supabaseClient
-                    .from('rooms')
-                    .update({ ready_players: currentReady })
-                    .eq('id', roomId);
-            }
+            // La verifica checkAllReady avverrà tramite la subscription o possiamo chiamarla qui ottimisticamente
+            checkAllReady();
         }
 
-        async function checkAllReady() {
-            const readyPlayers = currentRoom.ready_players || [];
+        async function checkAllReady(cachedPlayers = null) {
+            let currentPlayers = cachedPlayers;
 
-            if (readyPlayers.length >= activePlayers.length && activePlayers.length > 0) {
+            if (!currentPlayers) {
+                // Ricarica lo stato aggiornato dei player solo se non passato
+                const { data: fetched } = await supabaseClient
+                    .from('players')
+                    .select('*')
+                    .eq('room_id', roomId);
+                currentPlayers = fetched;
+            }
+
+            // Filtra solo quelli attivi (non eliminati)
+            const eliminated = currentRoom.eliminated_players || [];
+            const active = currentPlayers.filter(p => !eliminated.includes(p.name));
+
+            const readyCount = active.filter(p => p.is_ready).length;
+
+            if (readyCount >= active.length && active.length > 0) {
+                // Fix ReferenceError: define readyPlayers from active list
+                const readyPlayers = active.filter(p => p.is_ready).map(p => p.name);
                 const sortedReadyPlayers = [...readyPlayers].sort();
                 const amIFirstReady = sortedReadyPlayers[0] === playerName;
 
@@ -536,6 +569,13 @@
         function subscribeToChanges() {
             supabaseClient
                 .channel('room-game-channel-' + roomId + '-' + Date.now())
+                .on('postgres_changes',
+                    { event: 'UPDATE', schema: 'public', table: 'players', filter: `room_id=eq.${roomId}` },
+                    (payload) => {
+                        // Ricarica la lista player quando qualcuno cambia stato (es. ready)
+                        loadPlayersAndUpdate();
+                    }
+                )
                 .on('postgres_changes',
                     { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` },
                     async (payload) => {
@@ -579,6 +619,18 @@
                     }
                 )
                 .subscribe();
+        }
+
+        async function loadPlayersAndUpdate() {
+            const eliminatedPlayers = currentRoom.eliminated_players || [];
+            const { data: playersData } = await supabaseClient
+                .from('players')
+                .select('*')
+                .eq('room_id', roomId);
+
+            activePlayers = playersData.filter(p => !eliminatedPlayers.includes(p.name));
+            updateReadyUI();
+            checkAllReady(playersData);
         }
 
         initGame();

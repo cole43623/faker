@@ -56,7 +56,7 @@
                 let attempts = 0;
 
                 // Verifica che il codice sia unico
-                while (attempts < 10) {
+                while (attempts < 30) {
                     const { data: existing } = await supabaseClient
                         .from('rooms')
                         .select('id')

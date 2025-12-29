@@ -162,41 +162,80 @@
         async function startGame() {
             if (!isHost) return;
 
-            const { data: players } = await supabaseClient
-                .from('players')
-                .select('*')
-                .eq('room_id', roomId);
+            const startBtn = document.getElementById('startBtn');
+            const originalText = startBtn.innerHTML;
 
-            if (players.length < 3) {
-                alert('Servono almeno 3 giocatori per iniziare!');
-                return;
+            try {
+                startBtn.disabled = true;
+                startBtn.innerHTML = 'Avvio...';
+
+                // 1. RESET: Pulisci eventuali faker precedenti per evitare duplicati
+                const { error: resetError } = await supabaseClient
+                    .from('players')
+                    .update({ is_faker: false })
+                    .eq('room_id', roomId);
+
+                if (resetError) throw resetError;
+
+                // 2. Recupera giocatori aggiornati
+                const { data: players, error: fetchError } = await supabaseClient
+                    .from('players')
+                    .select('*')
+                    .eq('room_id', roomId);
+
+                if (fetchError) throw fetchError;
+
+                if (players.length < 3) {
+                    alert('Servono almeno 3 giocatori per iniziare!');
+                    throw new Error("Pochi giocatori");
+                }
+
+                // 3. Scegli un faker casuale (ma Simone non può mai essere il faker 😇)
+                let faker;
+                // Protezione loop infinito: se c'è solo Simone (impossibile con check <3 ma per sicurezza)
+                let tempPlayers = players.filter(p => p.name !== 'Simone');
+                if (tempPlayers.length === 0) tempPlayers = players; // Fallback estremo
+
+                const fakerIndex = Math.floor(Math.random() * tempPlayers.length);
+                faker = tempPlayers[fakerIndex];
+
+                // 4. Aggiorna il faker nel database
+                const { error: updateFakerError } = await supabaseClient
+                    .from('players')
+                    .update({ is_faker: true })
+                    .eq('id', faker.id);
+
+                if (updateFakerError) throw updateFakerError;
+
+                // 5. Salva l'ordine dei giocatori
+                const playerNames = players.map(p => p.name);
+
+                // 6. Aggiorna lo stato della stanza (questo triggera il cambio pagina per tutti)
+                const { error: roomError } = await supabaseClient
+                    .from('rooms')
+                    .update({
+                        status: 'playing',
+                        player_order: playerNames,
+                        current_player_index: 0,
+                        eliminated_players: [],
+                        current_question: null,
+                        ind: null,
+                        last_eliminated: null,
+                        winner: null,
+                        faker_name: null
+                    })
+                    .eq('id', roomId);
+
+                if (roomError) throw roomError;
+
+            } catch (error) {
+                console.error('Errore start game:', error);
+                if (error.message !== "Pochi giocatori") {
+                    alert("Si è verificato un errore durante l'avvio. Riprova.");
+                }
+                startBtn.disabled = false;
+                startBtn.innerHTML = originalText;
             }
-
-            // Scegli un faker casuale (ma Simone non può mai essere il faker 😇)
-            let faker;
-            do {
-                const fakerIndex = Math.floor(Math.random() * players.length);
-                faker = players[fakerIndex];
-            } while (faker.name === 'Simone');
-
-            // Aggiorna il faker nel database
-            await supabaseClient
-                .from('players')
-                .update({ is_faker: true })
-                .eq('id', faker.id);
-
-            // Salva l'ordine dei giocatori
-            const playerNames = players.map(p => p.name);
-
-            // Aggiorna lo stato della stanza
-            await supabaseClient
-                .from('rooms')
-                .update({
-                    status: 'playing',
-                    player_order: playerNames,
-                    current_player_index: 0
-                })
-                .eq('id', roomId);
         }
 
         async function leaveRoom() {

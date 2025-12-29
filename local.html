@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Faker | Modalità Locale</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        :root {
+            --primary: #6f42c1;
+            --primary-dark: #4834d4;
+            --accent: #ffc107;
+            --white: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            background: radial-gradient(circle at 50% 50%, #7e57c2 0%, #6f42c1 100%);
+            background-attachment: fixed;
+            min-height: 100dvh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 40px;
+            padding: 3rem 2rem;
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            animation: containerIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin: 0 0 2rem 0;
+            color: var(--white);
+            text-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .player-selector {
+            margin: 2rem 0;
+        }
+
+        .player-count-display {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: var(--accent);
+            margin: 1rem 0;
+            display: block;
+        }
+
+        .slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 12px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            margin: 20px 0;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+            border: 3px solid white;
+        }
+
+        .button-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn-premium {
+            background: var(--white);
+            color: var(--primary);
+            border: none;
+            padding: 1.2rem;
+            border-radius: 20px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            animation: slideUp 0.6s ease both;
+        }
+
+        .btn-premium:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            background: #f8f9fa;
+        }
+
+        .btn-premium:active {
+            transform: scale(0.98);
+        }
+
+        .btn-back {
+            background: transparent;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        @keyframes containerIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8) translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="glass-card">
+        <h1>🏠 GIOCATORI</h1>
+
+        <div class="player-selector">
+            <span class="player-count-display" id="nr">4</span>
+            <input type="range" min="3" max="16" value="4" class="slider" id="numeroGiocatori">
+            <p style="opacity: 0.7;">Sposta il cursore per scegliere</p>
+        </div>
+
+        <div class="button-stack">
+            <button class="btn-premium" onclick="continua()">
+                Continua <span>➡️</span>
+            </button>
+            <button class="btn-premium btn-back" onclick="goBack()">
+                Indietro
+            </button>
+        </div>
+    </div>
+
+    <script>
+        var slider = document.getElementById("numeroGiocatori");
+        var output = document.getElementById("nr");
+
+        // Ripristina il valore salvato (se esiste)
+        var savedValue = sessionStorage.getItem("localPlayerCount");
+        if (savedValue) {
+            slider.value = savedValue;
+            output.innerHTML = savedValue;
+        }
+
+        slider.oninput = function () {
+            output.innerHTML = this.value;
+            sessionStorage.setItem("localPlayerCount", this.value);
+        }
+
+        function continua() {
+            window.location.href = 'setnames.html?nr=' + slider.value;
+        }
+
+        function goBack() {
+            window.location.href = 'index.html';
+        }
+
+        // Add ambient particles background
+        for (let i = 0; i < 15; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            const size = Math.random() * 80 + 20;
+            p.style.width = p.style.height = size + 'px';
+            p.style.left = Math.random() * 100 + 'vw';
+            p.style.top = Math.random() * 100 + 'vh';
+            document.body.appendChild(p);
+        }
+    </script>
+</body>
+
+</html>

@@ -210,7 +210,7 @@
     <span class="tagline">Chi sta mentendo? 🕵️</span>
 
     <div class="button-stack">
-      <button class="btn-premium btn-local btn-1" onclick="showLocalMode()">
+      <button class="btn-premium btn-local btn-1" onclick="localMode()">
         <span>🏠</span> Modalità Locale
       </button>
       <button class="btn-premium btn-online btn-2" onclick="createRoom()">
@@ -222,42 +222,10 @@
     </div>
   </div>
 
-  <!-- Player Selection Screen -->
-  <div id="local-mode-container" class="glass-card" style="display: none;">
-    <h1 class="sub-h1">GIOCATORI</h1>
-
-    <div class="player-selector">
-      <span class="player-count-display" id="nr">4</span>
-      <input type="range" min="3" max="16" value="4" class="slider" id="numeroGiocatori">
-      <p style="opacity: 0.7;">Sposta il cursore per scegliere</p>
-    </div>
-
-    <div class="button-stack">
-      <button class="btn-premium btn-4" onclick="azione1()">
-        Continua <span>➡️</span>
-      </button>
-      <button class="btn-premium"
-        style="background: transparent; color: white; border: 1px solid rgba(255,255,255,0.3);"
-        onclick="hideLocalMode()">
-        Indietro
-      </button>
-    </div>
-  </div>
-
   <script>
-    var slider = document.getElementById("numeroGiocatori");
-    var output = document.getElementById("nr");
-    var mainMenu = document.getElementById("main-menu-container");
-    var localMode = document.getElementById("local-mode-container");
 
-    function showLocalMode() {
-      mainMenu.style.display = "none";
-      localMode.style.display = "block";
-    }
-
-    function hideLocalMode() {
-      localMode.style.display = "none";
-      mainMenu.style.display = "block";
+    function localMode() {
+      window.location.href = 'local.html';
     }
 
     function createRoom() {
@@ -266,15 +234,6 @@
 
     function joinRoom() {
       window.location.href = 'join.html';
-    }
-
-    function azione1() {
-      var url = 'setnames.html?nr=' + slider.value;
-      window.location.href = url;
-    }
-
-    slider.oninput = function () {
-      output.innerHTML = this.value;
     }
 
     // Add ambient particles background

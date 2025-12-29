@@ -355,6 +355,7 @@
         let currentRoom = null;
         let amIEliminated = false;
         let pendingRedirect = null;
+        let myPlayer = null;
 
         // Funzioni per il modal popup
         function showResultModal(icon, title, message) {
@@ -387,6 +388,9 @@
 
             allPlayers = playersData;
 
+            // Fix ReferenceError: define myPlayer here
+            myPlayer = allPlayers.find(p => p.name === playerName);
+
             const { data: room } = await supabaseClient
                 .from('rooms')
                 .select('*')
@@ -394,7 +398,6 @@
                 .single();
 
             currentRoom = room;
-            votes = currentRoom.votes || {};
 
             const eliminatedPlayers = currentRoom.eliminated_players || [];
             activePlayers = allPlayers.filter(p => !eliminatedPlayers.includes(p.name));
@@ -419,13 +422,32 @@
                 showEliminatedState();
             }
 
+            // SELF-CLEANING: Resetto il mio is_ready (proveniente dal game 1)
+            if (myPlayer) {
+                await supabaseClient
+                    .from('players')
+                    .update({ is_ready: false })
+                    .eq('id', myPlayer.id);
+            }
+
+            // Carica voti iniziali
+            const { data: votedPlayers } = await supabaseClient
+                .from('players')
+                .select('name, vote_target')
+                .eq('room_id', roomId);
+
+            votes = {};
+            votedPlayers.forEach(p => {
+                if (p.vote_target) votes[p.name] = p.vote_target;
+            });
+
             if (votes[playerName]) {
                 myVote = votes[playerName];
             }
 
             renderButtons();
             subscribeToVotes();
-            checkAllVoted();
+            checkAllVoted(allPlayers);
         }
 
         function showEliminatedState() {
@@ -506,41 +528,78 @@
             if (myVote || amIEliminated) return;
 
             myVote = votedFor;
+            votes[playerName] = votedFor; // Optimistic update
 
-            const { data: freshRoom } = await supabaseClient
-                .from('rooms')
-                .select('votes')
-                .eq('id', roomId)
-                .single();
+            // Update UI senza ricreare tutti i bottoni (evita animazione)
+            document.querySelectorAll('.rounded-button').forEach(btn => {
+                btn.disabled = true;
 
-            const updatedVotes = freshRoom.votes || {};
-            updatedVotes[playerName] = votedFor;
+                // Trova il bottone del giocatore votato e aggiorna il counter
+                if (btn.textContent.includes(votedFor)) {
+                    btn.classList.add('voted');
+
+                    // Aggiorna o aggiungi il badge del conteggio voti
+                    const newVoteCount = Object.values(votes).filter(v => v === votedFor).length;
+                    let voteCountSpan = btn.querySelector('.vote-count');
+                    if (voteCountSpan) {
+                        voteCountSpan.textContent = newVoteCount;
+                    } else {
+                        voteCountSpan = document.createElement('span');
+                        voteCountSpan.className = 'vote-count';
+                        voteCountSpan.textContent = newVoteCount;
+                        btn.appendChild(voteCountSpan);
+                    }
+                }
+            });
+            updateWaitingStatus();
 
             await supabaseClient
-                .from('rooms')
-                .update({ votes: updatedVotes })
-                .eq('id', roomId);
+                .from('players')
+                .update({ vote_target: votedFor })
+                .eq('id', myPlayer.id);
 
-            votes = updatedVotes;
-            renderButtons();
-            checkAllVoted();
+            // La subscription si occuperà di aggiornare l'UI quando arrivano gli altri voti
         }
 
-        async function checkAllVoted() {
-            const { data: freshRoom } = await supabaseClient
-                .from('rooms')
-                .select('votes, status')
-                .eq('id', roomId)
-                .single();
+        async function checkAllVoted(cachedPlayers = null) {
+            let currentPlayers = cachedPlayers;
 
-            if (freshRoom.status !== 'voting') return;
+            if (!currentPlayers) {
+                // Ricarica stato voti solo se non passati
+                const { data: fetched } = await supabaseClient
+                    .from('players')
+                    .select('*')
+                    .eq('room_id', roomId);
+                currentPlayers = fetched;
+            }
 
-            const freshVotes = freshRoom.votes || {};
-            const votedCount = Object.keys(freshVotes).length;
+            const eliminatedPlayers = currentRoom.eliminated_players || [];
+            const active = currentPlayers.filter(p => !eliminatedPlayers.includes(p.name));
 
-            if (votedCount >= activePlayers.length && activePlayers.length > 0) {
+            // Ricostruisci mappa voti (SOLO dai giocatori attivi)
+            const freshVotes = {};
+            active.forEach(p => {
+                if (p.vote_target) freshVotes[p.name] = p.vote_target;
+            });
+
+            // OPTIMIZATION: Evita re-render se i voti sono identici (es. chiamata da castVote o initVoting)
+            // Usiamo JSON stringify per comparazione veloce di oggetti semplici
+            const votesChanged = JSON.stringify(freshVotes) !== JSON.stringify(votes);
+
+            votes = freshVotes;
+
+            if (votesChanged) {
+                renderButtons(); // Aggiorna UI solo se cambiato qualcosa
+            }
+
+            const votedCount = active.filter(p => p.vote_target).length;
+
+            if (votedCount >= active.length && active.length > 0) {
                 const sortedVoters = Object.keys(freshVotes).sort();
-                const amIFirstVoter = sortedVoters[0] === playerName;
+                const firstVoter = sortedVoters[0];
+                const amIFirstVoter = firstVoter === playerName;
+
+                console.log(`CheckAllVoted: ${votedCount}/${active.length} - FirstVoter: ${firstVoter}, Me: ${playerName} -> AmILeader? ${amIFirstVoter}`);
 
                 if (!amIFirstVoter) return;
 
@@ -554,17 +613,23 @@
                     .filter(([name, count]) => count === maxVotes)
                     .map(([name]) => name);
 
+                console.log("Leader attempting update...", playersWithMaxVotes);
+
                 if (playersWithMaxVotes.length > 1) {
-                    await supabaseClient
+                    const { data, error } = await supabaseClient
                         .from('rooms')
                         .update({
                             status: 'playing',
                             current_question: null,
-                            votes: {},
-                            ready_players: [],
                             last_eliminated: null
                         })
-                        .eq('id', roomId);
+                        .eq('id', roomId)
+                        .eq('status', 'voting')
+                        .select();
+
+                    if (error) console.error("Update error (tie):", error);
+                    else console.log("Update success (tie):", data);
+
                     return;
                 }
 
@@ -595,17 +660,20 @@
                             })
                             .eq('id', roomId);
                     } else {
-                        await supabaseClient
+                        const { data, error } = await supabaseClient
                             .from('rooms')
                             .update({
                                 status: 'playing',
                                 current_question: null,
-                                votes: {},
-                                ready_players: [],
                                 last_eliminated: eliminated,
                                 eliminated_players: currentEliminated
                             })
-                            .eq('id', roomId);
+                            .eq('id', roomId)
+                            .eq('status', 'voting')
+                            .select();
+
+                        if (error) console.error("Update error (elimination):", error);
+                        else console.log("Update success (elimination):", data);
                     }
                 }
             }
@@ -615,10 +683,16 @@
             supabaseClient
                 .channel('votes-channel-' + roomId + '-' + Date.now())
                 .on('postgres_changes',
+                    { event: 'UPDATE', schema: 'public', table: 'players', filter: `room_id=eq.${roomId}` },
+                    (payload) => {
+                        checkAllVoted(); // Ricarica e controlla
+                    }
+                )
+                .on('postgres_changes',
                     { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` },
                     async (payload) => {
                         currentRoom = payload.new;
-                        votes = currentRoom.votes || {};
+                        // Nota: i voti non sono più in rooms.votes, ma in players table
 
                         const eliminatedPlayers = currentRoom.eliminated_players || [];
                         activePlayers = allPlayers.filter(p => !eliminatedPlayers.includes(p.name));

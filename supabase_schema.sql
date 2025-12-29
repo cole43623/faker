@@ -6,13 +6,11 @@ create table public.rooms (
   status text default 'waiting' not null,
   player_order jsonb,
   current_player_index integer default 0,
-  votes jsonb default '{}'::jsonb,
   winner text,
   faker_name text,
   last_eliminated text,
   current_question text,
   ind integer,
-  ready_players jsonb default '[]'::jsonb,
   eliminated_players jsonb default '[]'::jsonb
 );
 
@@ -23,7 +21,9 @@ create table public.players (
   room_id uuid references public.rooms(id) on delete cascade not null,
   name text not null,
   is_host boolean default false,
-  is_faker boolean default false
+  is_faker boolean default false,
+  is_ready boolean default false,
+  vote_target text
 );
 
 -- 3. Abilita RLS (Row Level Security)

@@ -6,6 +6,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Imposta nomi</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    .input-error {
+      border: 2px solid #ff4444 !important;
+      animation: shake 0.4s ease-in-out;
+      box-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
+    }
+
+    @keyframes shake {
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      25% {
+        transform: translateX(-5px);
+      }
+
+      75% {
+        transform: translateX(5px);
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -16,6 +39,7 @@
     </div>
     <div class="button-container">
       <button class="rounded-button" onclick="azione1()">Avvia</button>
+      <a class="back-link" href="local.html">Indietro</a>
     </div>
   </div>
 
@@ -38,11 +62,24 @@
 
     function azione1() {
       var arrayMisto = [];
+      var hasError = false;
       var inputs = document.getElementsByClassName('text-input');
+
+      // Reset errors first
       for (var i = 0; i < nr; i++) {
-        if (inputs[i].value == "") { return; }
-        arrayMisto.push(inputs[i].value);
+        inputs[i].classList.remove('input-error');
       }
+
+      for (var i = 0; i < nr; i++) {
+        if (inputs[i].value.trim() == "") {
+          inputs[i].classList.add('input-error');
+          hasError = true;
+        } else {
+          arrayMisto.push(inputs[i].value);
+        }
+      }
+
+      if (hasError) return;
       var arrayAsString = JSON.stringify(arrayMisto);
       sessionStorage.setItem("remainingPlayers", arrayAsString);
       sessionStorage.setItem("allPlayers", arrayAsString);
