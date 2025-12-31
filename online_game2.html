@@ -499,6 +499,42 @@
             updateWaitingStatus();
         }
 
+        // Aggiorna solo i contatori senza ricreare i bottoni
+        function updateVoteCounts() {
+            const buttons = document.querySelectorAll('.rounded-button');
+            buttons.forEach(btn => {
+                // Trova il nome del player dal bottone
+                const nameSpan = btn.querySelector('span');
+                if (!nameSpan) return;
+
+                // Estrai nome dal testo (es. "👤 NomeGiocatore" o "👤 NomeGiocatore TU")
+                const nameText = nameSpan.textContent.replace('👤 ', '').replace(' TU', '').trim();
+                const player = activePlayers.find(p => p.name === nameText);
+                if (!player) return;
+
+                const voteCount = Object.values(votes).filter(v => v === player.name).length;
+
+                let voteCountSpan = btn.querySelector('.vote-count');
+
+                if (voteCount > 0) {
+                    if (voteCountSpan) {
+                        voteCountSpan.textContent = voteCount;
+                    } else {
+                        voteCountSpan = document.createElement('span');
+                        voteCountSpan.className = 'vote-count';
+                        voteCountSpan.textContent = voteCount;
+                        btn.appendChild(voteCountSpan);
+                    }
+                } else {
+                    if (voteCountSpan) {
+                        voteCountSpan.remove();
+                    }
+                }
+            });
+
+            updateWaitingStatus();
+        }
+
         function updateWaitingStatus() {
             const waitingStatus = document.getElementById('waitingStatus');
             const votedCount = Object.keys(votes).length;
@@ -589,7 +625,7 @@
             votes = freshVotes;
 
             if (votesChanged) {
-                renderButtons(); // Aggiorna UI solo se cambiato qualcosa
+                updateVoteCounts(); // Aggiorna solo i contatori, non ricreare i bottoni
             }
 
             const votedCount = active.filter(p => p.vote_target).length;
