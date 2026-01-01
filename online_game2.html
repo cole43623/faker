@@ -629,22 +629,33 @@
             }
 
             const votedCount = active.filter(p => p.vote_target).length;
+            const remainingVotes = active.length - votedCount;
 
-            if (votedCount >= active.length && active.length > 0) {
-                const sortedVoters = Object.keys(freshVotes).sort();
-                const firstVoter = sortedVoters[0];
-                const amIFirstVoter = firstVoter === playerName;
+            // Calcolo conteggio voti attuale
+            const voteCounts = {};
+            Object.values(freshVotes).forEach(v => {
+                voteCounts[v] = (voteCounts[v] || 0) + 1;
+            });
 
-                console.log(`CheckAllVoted: ${votedCount}/${active.length} - FirstVoter: ${firstVoter}, Me: ${playerName} -> AmILeader? ${amIFirstVoter}`);
+            // Determino primo e secondo per la certezza matematica
+            const sortedCounts = Object.values(voteCounts).sort((a, b) => b - a);
+            const maxVotes = sortedCounts[0] || 0;
+            const secondMaxVotes = sortedCounts[1] || 0;
 
-                if (!amIFirstVoter) return;
+            // Certezza: il primo ha più voti di quanti il secondo potrebbe ottenere con tutti i voti rimanenti
+            const isCertain = maxVotes > (secondMaxVotes + remainingVotes);
+            const allVoted = votedCount >= active.length;
 
-                const voteCounts = {};
-                Object.values(freshVotes).forEach(v => {
-                    voteCounts[v] = (voteCounts[v] || 0) + 1;
-                });
+            if ((allVoted || isCertain) && active.length > 0) {
+                // Eleggiamo un leader stabile tra i giocatori attivi (il primo in ordine alfabetico)
+                const activeSorted = active.map(p => p.name).sort();
+                const leader = activeSorted[0];
+                const amILeader = leader === playerName;
 
-                const maxVotes = Math.max(...Object.values(voteCounts));
+                console.log(`CheckAllVoted: ${votedCount}/${active.length} (Certezza: ${isCertain}) - Leader: ${leader}, Me: ${playerName} -> AmILeader? ${amILeader}`);
+
+                if (!amILeader) return;
+
                 const playersWithMaxVotes = Object.entries(voteCounts)
                     .filter(([name, count]) => count === maxVotes)
                     .map(([name]) => name);
@@ -747,7 +758,11 @@
                             pendingRedirect = 'online_game1.html';
 
                             if (eliminated) {
-                                showResultModal('😵', 'Eliminato!', eliminated + ' era innocente ed è stato eliminato.');
+                                if (eliminated === playerName) {
+                                    showResultModal('👻', 'Sei fuori!', 'Sei stato eliminato! Ora sei un osservatore.');
+                                } else {
+                                    showResultModal('😵', 'Eliminato!', eliminated + ' era innocente ed è stato eliminato.');
+                                }
                             } else {
                                 showResultModal('⚖️', 'Pareggio!', 'Nessuno è stato eliminato. Si va al prossimo round!');
                             }

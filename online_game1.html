@@ -312,8 +312,14 @@
         let domanda = null;
         let isReady = false;
         let amIEliminated = false;
+        let isSubscribed = false;
 
         async function initGame() {
+            // Attiva la subscription subito al primo avvio per essere in ascolto real-time
+            if (!isSubscribed) {
+                subscribeToChanges();
+                isSubscribed = true;
+            }
             const { data: room } = await supabaseClient
                 .from('rooms')
                 .select('*')
@@ -361,49 +367,48 @@
 
             const simonePlayer = playersData.find(p => p.name === 'Simone');
             const isSimone = playerName === 'Simone';
-            let shouldIPick;
-
-            if (simonePlayer) {
-                shouldIPick = isSimone;
-            } else {
-                // Fallback: il player attivo con ID più basso (ordine alfabetico UUID) sceglie la domanda
-                // Ordina per ID per determinismo
-                const sortedActive = [...activePlayers].sort((a, b) => a.id.localeCompare(b.id));
-                shouldIPick = (myPlayer && myPlayer.id === sortedActive[0].id);
-            }
 
             if (currentRoom.current_question) {
                 domanda = currentRoom.current_question;
             } else {
-                if (shouldIPick) {
-                    console.log("devo scegliere domanda");
-                    const domi = Math.floor(Math.random() * dom.length);
-                    domanda = dom[domi];
-                    currentRoom.ind = domi;
-
+                if (simonePlayer) {
+                    // SE SIMONE C'E': solo lui può scegliere
                     if (isSimone) {
+                        console.log("Simone deve scegliere domanda");
+                        const domi = Math.floor(Math.random() * dom.length);
+                        domanda = dom[domi];
                         showSimonePickerUI(domanda, domi);
-                        subscribeToChanges();
                         return;
                     } else {
-                        await supabaseClient
-                            .from('rooms')
-                            .update({
-                                current_question: domanda,
-                                ind: domi
-                            })
-                            .eq('id', roomId);
+                        // Gli altri aspettano Simone (gestito da subscription)
+                        return;
+                    }
+                } else {
+                    // SE SIMONE NON C'E': estrazione automatica veloce (il primo che arriva vince)
+                    console.log("Simone assente: estrazione automatica in corso...");
+                    const domi = Math.floor(Math.random() * dom.length);
+                    const randomDomanda = dom[domi];
 
-                        // Reset ready status for everyone locally (reflected in next fetch) or wait for page reload
+                    // Tentativo di update atomico: scrivo solo se current_question è ancora null
+                    const { data: updatedRoom, error } = await supabaseClient
+                        .from('rooms')
+                        .update({
+                            current_question: randomDomanda,
+                            ind: domi
+                        })
+                        .eq('id', roomId)
+                        .is('current_question', null) // Protezione race condition
+                        .select();
+
+                    if (updatedRoom && updatedRoom.length > 0) {
+                        // Io ho vinto la gara! Resetto i ready per tutti
                         await supabaseClient
                             .from('players')
                             .update({ is_ready: false })
                             .eq('room_id', roomId);
-
-                        isReady = false;
                     }
-                } else {
-                    setTimeout(initGame, 1000);
+
+                    // L'aggiornamento UI avverrà tramite la subscription
                     return;
                 }
             }
@@ -461,6 +466,7 @@
         }
 
         async function approveQuestion() {
+            // Solo per sicurezza, ma initGame è ora l'unica fonte di verità
             await supabaseClient
                 .from('rooms')
                 .update({
@@ -586,6 +592,9 @@
                             return;
                         }
 
+                        // Ricarica la logica di gioco per mostrare domanda o picker
+                        initGame();
+
                         if (currentRoom.status === 'finished') {
                             if (currentRoom.winner === 'players') {
                                 sessionStorage.setItem('gameResult', 'players_win');
@@ -614,7 +623,7 @@
                             activePlayers = playersData.filter(p => !eliminatedPlayers.includes(p.name));
 
                             updateReadyUI();
-                            checkAllReady();
+                            // checkAllReady(); // Già chiamato da initGame
                         }
                     }
                 )
